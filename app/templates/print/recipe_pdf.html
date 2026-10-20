@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>{{ recipe['title'] }}</title>
+<style>
+  @page {
+    size: Letter;
+    margin: 0.75in;
+    @bottom-center { content: "Page " counter(page) " of " counter(pages); font-size: 8pt; color: #9a9086; }
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: Georgia, "Times New Roman", serif;
+    color: #2b2621;
+    font-size: 11pt;
+    line-height: 1.45;
+  }
+  h1.title {
+    font-size: 26pt;
+    margin: 0 0 4pt;
+    color: #b5542a;
+  }
+  .meta {
+    font-size: 9.5pt;
+    color: #6b6258;
+    margin: 0 0 10pt;
+  }
+  .meta span {
+    margin-right: 14pt;
+  }
+  .badge-review {
+    display: inline-block;
+    font-size: 8pt;
+    font-weight: bold;
+    color: #8a4a12;
+    background: #fde6d4;
+    border-radius: 8pt;
+    padding: 1pt 7pt;
+    margin-bottom: 8pt;
+  }
+  .photo {
+    display: block;
+    max-width: 100%;
+    max-height: 2.4in;
+    object-fit: cover;
+    margin: 0 0 12pt;
+    border-radius: 6pt;
+  }
+  .ingredients-col {
+    margin-bottom: 14pt;
+  }
+  ul.ingredient-list {
+    columns: 2;
+    column-gap: 0.4in;
+  }
+  ul.ingredient-list li {
+    break-inside: avoid;
+  }
+  h2.section-heading {
+    font-size: 10pt;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #6b6258;
+    margin: 0 0 8pt;
+    border-bottom: 1pt solid #e4ddd3;
+    padding-bottom: 4pt;
+  }
+  ul.ingredient-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  ul.ingredient-list li {
+    padding: 3pt 0;
+    border-bottom: 0.5pt solid #efe9e2;
+  }
+  .ingredient-heading {
+    font-weight: bold;
+    color: #b5542a;
+    border-bottom: none !important;
+    margin-top: 8pt;
+  }
+  .instructions-col p {
+    margin: 0 0 9pt;
+  }
+  .instructions-col ul, .instructions-col ol {
+    margin: 0 0 9pt;
+    padding-left: 18pt;
+  }
+  .notes {
+    margin-top: 16pt;
+    border-top: 1pt solid #e4ddd3;
+    padding-top: 10pt;
+  }
+  .note {
+    margin-bottom: 8pt;
+    font-size: 10pt;
+  }
+  .note-date {
+    color: #9a9086;
+    font-size: 8.5pt;
+  }
+</style>
+</head>
+<body>
+  <h1 class="title">{{ recipe['title'] }}</h1>
+  <p class="meta">
+    {% if recipe['category_name'] %}<span>{{ recipe['category_name'] }}</span>{% endif %}
+    {% if recipe['contributor'] %}<span>By {{ recipe['contributor'] }}</span>{% endif %}
+    {% if recipe['source'] %}<span>Source: {{ recipe['source'] }}</span>{% endif %}
+    {% if recipe['servings'] %}<span>Servings: {{ recipe['servings'] }}</span>{% endif %}
+    {% if recipe['prep_time'] %}<span>Prep: {{ recipe['prep_time'] }}</span>{% endif %}
+    {% if recipe['cook_time'] %}<span>Cook: {{ recipe['cook_time'] }}</span>{% endif %}
+    {% if recipe['last_made'] %}<span>Last made: {{ recipe['last_made'] }}</span>{% endif %}
+  </p>
+  {% if recipe['needs_review'] %}<div class="badge-review">Needs review</div>{% endif %}
+  {% if image_path %}<img class="photo" src="file://{{ image_path }}">{% endif %}
+
+  <div class="ingredients-col">
+    <h2 class="section-heading">Ingredients</h2>
+    <ul class="ingredient-list">
+      {% for ing in ingredients %}
+        {% if ing['kind'] == 'heading' %}
+          <li class="ingredient-heading">{{ ing['raw_text'] }}</li>
+        {% else %}
+          <li>{{ ing['raw_text'] }}</li>
+        {% endif %}
+      {% endfor %}
+    </ul>
+  </div>
+  <div class="instructions-col">
+    <h2 class="section-heading">Instructions</h2>
+    {{ recipe['instructions_html']|safe }}
+  </div>
+
+  {% if notes %}
+  <div class="notes">
+    <h2 class="section-heading">Notes</h2>
+    {% for n in notes %}
+    <div class="note">
+      <span class="note-date">{{ n['created_at']|fmtdate }}</span>
+      <p>{{ n['body'] }}</p>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+</body>
+</html>

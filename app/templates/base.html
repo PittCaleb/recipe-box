@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Recipes{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+  {% block head %}{% endblock %}
+</head>
+<body>
+  <header class="site-header no-print">
+    <a class="site-title" href="{{ url_for('browse.index') }}">Recipes</a>
+    <nav class="site-nav">
+      {% if is_authenticated %}
+        <a class="header-link" href="{{ url_for('edit.new') }}">New recipe</a>
+        <a class="header-link" href="{{ url_for('admin.index') }}">Admin</a>
+        {% if login_required %}
+        <form method="post" action="{{ url_for('auth.logout') }}" class="inline-form">
+          <button type="submit" class="header-link header-link--button">Log out</button>
+        </form>
+        {% endif %}
+      {% elif login_required %}
+        <a class="header-link" href="{{ url_for('auth.login') }}">Log in</a>
+      {% endif %}
+    </nav>
+  </header>
+  <main class="site-main">
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <ul class="flash-messages no-print">
+          {% for m in messages %}<li>{{ m }}</li>{% endfor %}
+        </ul>
+      {% endif %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

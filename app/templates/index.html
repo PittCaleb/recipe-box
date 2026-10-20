@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Recipes{% endblock %}
+{% block content %}
+<form id="search-form" class="browse-controls" data-search-url="{{ url_for('browse.api_search') }}">
+  <input
+    type="search"
+    name="q"
+    id="search-input"
+    class="search-input"
+    placeholder="Search recipes, ingredients, contributors&hellip;"
+    value="{{ params.q }}"
+    autocomplete="off"
+  >
+
+  <div class="browse-row">
+    <select name="category" id="category-select" class="category-select">
+      <option value="">All categories</option>
+      {% for c in categories %}
+        <option value="{{ c['id'] }}" {% if params.category_id == c['id'] %}selected{% endif %}>{{ c['name'] }}</option>
+      {% endfor %}
+    </select>
+
+    <select name="sort" id="sort-select" class="sort-select">
+      <option value="name" {% if params.sort == 'name' %}selected{% endif %}>Name A&ndash;Z</option>
+      <option value="recent_made" {% if params.sort == 'recent_made' %}selected{% endif %}>Recently made</option>
+      <option value="recent_added" {% if params.sort == 'recent_added' %}selected{% endif %}>Recently added</option>
+    </select>
+  </div>
+
+  <div class="browse-row browse-toggles">
+    <label class="toggle-chip">
+      <input type="checkbox" name="needs_review" value="1" {% if params.needs_review %}checked{% endif %}>
+      Needs review
+    </label>
+    <label class="toggle-chip">
+      <input type="checkbox" name="favorites" value="1" {% if params.favorites %}checked{% endif %}>
+      Favorites
+    </label>
+  </div>
+</form>
+
+<div id="results">
+  {% include "partials/_recipe_cards.html" %}
+</div>
+{% endblock %}
+{% block head %}
+<script src="{{ url_for('static', filename='js/search.js') }}" defer></script>
+{% endblock %}
