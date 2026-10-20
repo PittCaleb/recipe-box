@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Print cookbook{% endblock %}
+{% block content %}
+<h1>Print cookbook</h1>
+
+<form id="cookbook-form" action="{{ url_for('admin.cookbook_build') }}" method="post">
+  <div class="field">
+    <label for="cover_title">Cover title</label>
+    <input type="text" id="cover_title" name="cover_title" value="{{ default_title }}">
+  </div>
+
+  <div class="field">
+    <label>Categories to include</label>
+    <div class="category-checkboxes">
+      {% for c in categories %}
+      <label class="toggle-chip">
+        <input type="checkbox" name="category_id" value="{{ c['id'] }}" checked>
+        {{ c['name'] }} ({{ c['recipe_count'] }})
+      </label>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="field-row field-row--checks">
+    <label class="toggle-chip">
+      <input type="checkbox" name="include_images" value="1" checked>
+      Include images
+    </label>
+    <label class="toggle-chip">
+      <input type="checkbox" name="include_notes" value="1" checked>
+      Include notes
+    </label>
+  </div>
+
+  <div class="edit-form-actions">
+    <button type="submit" class="btn btn-primary" id="cookbook-submit">Build cookbook PDF</button>
+    <span class="spinner" id="cookbook-spinner" hidden>Generating&hellip; this can take a little while for a lot of recipes.</span>
+  </div>
+  <p class="share-status" id="cookbook-status" hidden></p>
+</form>
+{% endblock %}
+{% block head %}
+<script src="{{ url_for('static', filename='js/cookbook.js') }}" defer></script>
+{% endblock %}
