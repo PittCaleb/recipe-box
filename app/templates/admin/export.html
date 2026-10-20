@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Export backup{% endblock %}
+{% block content %}
+<h1>Export backup</h1>
+<p>Writes a plain-text backup of every recipe to <code>data/exports/</code> and downloads it.</p>
+<form method="post">
+  <button type="submit" class="btn btn-primary">Download backup (.txt)</button>
+</form>
+{% endblock %}

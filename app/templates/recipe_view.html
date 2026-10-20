@@ -1,0 +1,213 @@
+{% extends "base.html" %}
+{% block title %}{{ recipe['title'] }}{% endblock %}
+{% block content %}
+<article class="recipe-view">
+  <header class="recipe-header">
+    <div class="recipe-header-top">
+      <h1 class="recipe-title">{{ recipe['title'] }}</h1>
+      <form method="post" action="{{ url_for('recipe.favorite', recipe_id=recipe['id']) }}" class="inline-form">
+        <button type="submit" class="icon-button favorite-toggle {% if recipe['favorite'] %}is-active{% endif %}" aria-pressed="{{ 'true' if recipe['favorite'] else 'false' }}" title="Favorite">
+          &#9733;
+        </button>
+      </form>
+    </div>
+    <p class="recipe-meta">
+      {% if recipe['category_name'] %}<span class="recipe-meta-item">{{ recipe['category_name'] }}</span>{% endif %}
+      {% if recipe['contributor'] %}<span class="recipe-meta-item">By {{ recipe['contributor'] }}</span>{% endif %}
+      {% if recipe['source'] %}<span class="recipe-meta-item">Source: {{ recipe['source'] }}</span>{% endif %}
+    </p>
+    <p class="recipe-meta">
+      {% if recipe['servings'] %}<span class="recipe-meta-item">Servings: {{ recipe['servings'] }}</span>{% endif %}
+      {% if recipe['prep_time'] %}<span class="recipe-meta-item">Prep: {{ recipe['prep_time'] }}</span>{% endif %}
+      {% if recipe['cook_time'] %}<span class="recipe-meta-item">Cook: {{ recipe['cook_time'] }}</span>{% endif %}
+    </p>
+    {% if recipe['needs_review'] %}<span class="badge badge-review">Needs review</span>{% endif %}
+    {% if recipe['last_made'] %}<p class="recipe-last-made">Last made {{ recipe['last_made']|fmtdate }}</p>{% endif %}
+  </header>
+
+  {% if recipe['image_filename'] %}
+  <img class="recipe-photo" src="{{ url_for('media.image', filename=recipe['image_filename']) }}" alt="">
+  {% endif %}
+
+  <div class="recipe-actions no-print">
+    <form method="post" action="{{ url_for('recipe.made', recipe_id=recipe['id']) }}" class="inline-form" data-confirm="Mark this recipe as made today?">
+      <button type="submit" class="btn">I made this</button>
+    </form>
+    <button type="button" class="btn" data-open-modal="note-modal">Add note</button>
+    <button type="button" class="btn" data-open-modal="image-modal">{{ 'Replace image' if recipe['image_filename'] else 'Add image' }}</button>
+    <button type="button" class="btn" onclick="window.print()">Print</button>
+    <a class="btn" href="{{ url_for('share.download_pdf', recipe_id=recipe['id']) }}">Save PDF</a>
+    {% if can_email %}
+    <button type="button" class="btn" data-open-modal="email-modal">Email</button>
+    {% endif %}
+    {% if can_text %}
+    <button type="button" class="btn" data-open-modal="text-modal">Text</button>
+    {% endif %}
+    {% if recipe['scan_filename'] %}
+    <button type="button" class="btn" data-open-modal="scan-modal">View original scan</button>
+    {% endif %}
+    {% if is_authenticated %}
+    <a class="btn" href="{{ url_for('edit.edit', recipe_id=recipe['id']) }}">Edit</a>
+    <form method="post" action="{{ url_for('edit.delete', recipe_id=recipe['id']) }}" class="inline-form" data-confirm="Delete this recipe permanently? This cannot be undone.">
+      <button type="submit" class="btn btn-danger">Delete</button>
+    </form>
+    {% endif %}
+  </div>
+
+  <div class="recipe-body">
+    <section class="recipe-ingredients">
+      <h2>Ingredients</h2>
+      <ul class="ingredient-list" id="ingredient-list">
+        {% for ing in ingredients %}
+          {% if ing['kind'] == 'heading' %}
+            <li class="ingredient-heading" data-ing-index="{{ loop.index0 }}">{{ ing['raw_text'] }}</li>
+          {% else %}
+            <li class="ingredient-item" data-ing-index="{{ loop.index0 }}">
+              <span class="ingredient-item-text">{{ ing['raw_text'] }}</span>{% if ing['no_scale'] %} <span class="hint">(not scaled)</span>{% endif %}
+            </li>
+          {% endif %}
+        {% endfor %}
+      </ul>
+
+      {% if scaled_variants %}
+      <div class="adjust-panel no-print" id="adjust-panel" data-default-index="{{ default_index }}">
+        <script type="application/json" id="adjust-variants-data">{{ scaled_variants|tojson }}</script>
+        <div class="adjust-banner" id="adjust-banner" hidden>
+          Scaled &times;<span id="adjust-banner-value"></span>
+          <button type="button" class="link-button" id="adjust-reset">Reset</button>
+        </div>
+        <label for="adjust-slider" class="adjust-slider-label">
+          Scale recipe: <strong id="adjust-current-label">1</strong>
+        </label>
+        <input type="range" id="adjust-slider" min="0" max="{{ multiplier_labels|length - 1 }}" step="1" value="{{ default_index }}">
+        <div class="adjust-slider-ticks">
+          {% for label in multiplier_labels %}<span>{{ label }}</span>{% endfor %}
+        </div>
+      </div>
+      {% endif %}
+    </section>
+
+    <section class="recipe-instructions">
+      <h2>Instructions</h2>
+      <div class="rich-text">{{ recipe['instructions_html']|safe }}</div>
+    </section>
+  </div>
+
+  <section class="recipe-notes">
+    <h2>Notes</h2>
+    {% if notes %}
+    <ul class="note-list">
+      {% for n in notes %}
+      <li class="note">
+        <span class="note-date">{{ n['created_at']|fmtdate }}</span>
+        <p class="note-body">{{ n['body'] }}</p>
+        <form method="post" action="{{ url_for('recipe.delete_note_route', recipe_id=recipe['id'], note_id=n['id']) }}" class="inline-form no-print" data-confirm="Delete this note?">
+          <button type="submit" class="link-button">Delete</button>
+        </form>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="empty-state">No notes yet.</p>
+    {% endif %}
+  </section>
+</article>
+
+{% if recipe['scan_filename'] %}
+<div class="modal" id="scan-modal" hidden>
+  <div class="modal-backdrop" data-close-modal></div>
+  <div class="modal-content modal-content--lightbox">
+    <button type="button" class="modal-close" data-close-modal aria-label="Close">&times;</button>
+    <img src="{{ url_for('media.scan', filename=recipe['scan_filename']) }}" alt="Original scan of {{ recipe['title'] }}">
+  </div>
+</div>
+{% endif %}
+
+<div class="modal" id="image-modal" hidden>
+  <div class="modal-backdrop" data-close-modal></div>
+  <div class="modal-content">
+    <button type="button" class="modal-close" data-close-modal aria-label="Close">&times;</button>
+    <h2>{{ 'Replace image' if recipe['image_filename'] else 'Add image' }}</h2>
+    <form method="post" action="{{ url_for('edit.upload_image', recipe_id=recipe['id']) }}" enctype="multipart/form-data">
+      <input type="file" name="image" accept="image/*" required>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" data-close-modal>Cancel</button>
+        <button type="submit" class="btn btn-primary">Save</button>
+      </div>
+    </form>
+    {% if recipe['image_filename'] %}
+    <form method="post" action="{{ url_for('edit.remove_image', recipe_id=recipe['id']) }}" data-confirm="Remove this recipe's image?">
+      <button type="submit" class="link-button">Remove image</button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+
+{% if can_email %}
+<div class="modal" id="email-modal" hidden>
+  <div class="modal-backdrop" data-close-modal></div>
+  <div class="modal-content">
+    <button type="button" class="modal-close" data-close-modal aria-label="Close">&times;</button>
+    <h2>Email this recipe</h2>
+    <form data-share-form data-share-url="{{ url_for('share.email', recipe_id=recipe['id']) }}">
+      <div class="field">
+        <label for="email-to">Recipient email</label>
+        <input type="email" id="email-to" name="to" required>
+      </div>
+      <div class="field">
+        <label for="email-message">Message (optional)</label>
+        <textarea id="email-message" name="message" rows="3" class="note-textarea"></textarea>
+      </div>
+      <p class="share-status" hidden></p>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" data-close-modal>Cancel</button>
+        <button type="submit" class="btn btn-primary">Send</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endif %}
+
+{% if can_text %}
+<div class="modal" id="text-modal" hidden>
+  <div class="modal-backdrop" data-close-modal></div>
+  <div class="modal-content">
+    <button type="button" class="modal-close" data-close-modal aria-label="Close">&times;</button>
+    <h2>Text this recipe</h2>
+    <form data-share-form data-share-url="{{ url_for('share.text', recipe_id=recipe['id']) }}">
+      <div class="field">
+        <label for="text-to">Phone number or iMessage email</label>
+        <input type="text" id="text-to" name="to" required>
+      </div>
+      <div class="field">
+        <label for="text-message">Message (optional)</label>
+        <textarea id="text-message" name="message" rows="3" class="note-textarea"></textarea>
+      </div>
+      <p class="share-status" hidden></p>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" data-close-modal>Cancel</button>
+        <button type="submit" class="btn btn-primary">Send</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endif %}
+
+<div class="modal" id="note-modal" hidden>
+  <div class="modal-backdrop" data-close-modal></div>
+  <div class="modal-content">
+    <button type="button" class="modal-close" data-close-modal aria-label="Close">&times;</button>
+    <h2>Add note</h2>
+    <form method="post" action="{{ url_for('recipe.add_note_route', recipe_id=recipe['id']) }}">
+      <textarea name="body" rows="5" class="note-textarea" placeholder="What did you change, or want to remember?" required autofocus></textarea>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" data-close-modal>Cancel</button>
+        <button type="submit" class="btn btn-primary">Save note</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+{% block head %}
+<script src="{{ url_for('static', filename='js/recipe.js') }}" defer></script>
+{% endblock %}

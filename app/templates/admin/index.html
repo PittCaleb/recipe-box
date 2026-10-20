@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Admin{% endblock %}
+{% block content %}
+<h1>Admin</h1>
+<ul class="admin-menu">
+  <li><a href="{{ url_for('admin.categories') }}">Categories</a></li>
+  <li><a href="{{ url_for('admin.needs_review') }}">Needs-review queue</a></li>
+  <li><a href="{{ url_for('admin.export') }}">Export backup (.txt)</a></li>
+  <li><a href="{{ url_for('admin.cookbook') }}">Print cookbook</a></li>
+</ul>
+{% endblock %}
