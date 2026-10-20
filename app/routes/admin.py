@@ -13,7 +13,11 @@ bp = Blueprint("admin", __name__, url_prefix="/admin")
 
 @bp.route("/")
 def index():
-    return render_template("admin/index.html")
+    db = get_db()
+    recent_imports = db.execute(
+        "SELECT * FROM import_batches WHERE status != 'done' ORDER BY created_at DESC LIMIT 10"
+    ).fetchall()
+    return render_template("admin/index.html", recent_imports=recent_imports)
 
 
 @bp.route("/categories", methods=["GET"])

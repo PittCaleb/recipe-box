@@ -20,6 +20,19 @@ Open items, shelved for now — nothing here blocks using the app day to day.
   add a note, take/upload a photo, print.
 - [ ] Flag anything that looks cramped, misaligned, or hard to tap.
 
+## Feature request — browse page: card/text view toggle
+
+- [ ] Toggle on the home page between the current image/card grid and a
+  compact text-list view.
+- [ ] Text list: multi-column layout (responsive to screen width — likely
+  2-3 columns on a large window), with alphabetical section headers (A, B,
+  C...) and visible spacing between letter groups.
+- [ ] When a category filter is active, the headers switch to category
+  names instead of letters.
+- [ ] Within each section (letter or category), recipes sorted
+  alphabetically — confirm this is already the behavior in non-grouped
+  views, or make it so.
+
 ## Known data cleanup (from Phase 1 import, not urgent)
 
 ~18 duplicate/near-duplicate recipes exist across `recipes.pdf` and
