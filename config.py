@@ -2,6 +2,13 @@ import os
 import platform
 from pathlib import Path
 
+from dotenv import load_dotenv
+
+# Load variables from a .env file next to this one, if present. Real
+# environment variables (e.g. set by Docker, launchd, or your shell) always
+# win -- load_dotenv() never overrides a variable that's already set.
+load_dotenv(Path(__file__).resolve().parent / ".env")
+
 
 def _default_share_backend():
     return "mac" if platform.system() == "Darwin" else "none"
@@ -14,6 +21,11 @@ class Config:
     SHARE_BACKEND = os.environ.get("RECIPES_SHARE_BACKEND", _default_share_backend())
     APP_PASSWORD = os.environ.get("RECIPES_APP_PASSWORD") or None
     COOKBOOK_TITLE = os.environ.get("RECIPES_COOKBOOK_TITLE", "Our Family Recipes")
+    ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY") or None
+    IMPORT_MODEL = os.environ.get("RECIPES_IMPORT_MODEL", "claude-opus-5-5")
+    PDF_DIR = Path(
+        os.environ.get("RECIPES_PDF_DIR", str(Path(__file__).resolve().parent / "pdf"))
+    ).resolve()
 
     @property
     def DB_PATH(self):

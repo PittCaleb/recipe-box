@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Importing&hellip;{% endblock %}
+{% block content %}
+<h1>Importing {{ batch['original_filename'] }}</h1>
+
+<div id="import-progress" data-status-url="{{ url_for('import_pdf.status', batch_id=batch['id']) }}">
+  <p id="import-status-text" class="hint">
+    {% if batch['status'] == 'pending' %}Starting&hellip;
+    {% elif batch['status'] == 'rendering' %}Rendering pages&hellip;
+    {% else %}Transcribing page {{ batch['processed_pages'] }} of {{ batch['total_pages'] or '?' }}&hellip;{% endif %}
+  </p>
+  <progress id="import-progress-bar"
+            value="{{ batch['processed_pages'] }}"
+            max="{{ batch['total_pages'] or 1 }}"
+            style="width: 100%; height: 20px;"></progress>
+  <p class="hint">This page will refresh itself automatically — no need to reload.</p>
+</div>
+{% endblock %}
+{% block head %}
+<script src="{{ url_for('static', filename='js/import_progress.js') }}" defer></script>
+{% endblock %}

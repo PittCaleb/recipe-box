@@ -6,3 +6,4 @@ data/
 .idea/
 .pytest_cache/
 pdf/
+.env

@@ -2,7 +2,7 @@ from flask import Blueprint, current_app, flash, redirect, render_template, requ
 
 bp = Blueprint("auth", __name__)
 
-PROTECTED_BLUEPRINTS = {"edit", "admin", "share"}
+PROTECTED_BLUEPRINTS = {"edit", "admin", "share", "import_pdf"}
 
 
 def require_login():
