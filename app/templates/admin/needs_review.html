@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Needs review{% endblock %}
+{% block content %}
+<h1>Needs-review queue</h1>
+{% if recipes %}
+<ul class="needs-review-list">
+  {% for r in recipes %}
+  <li class="needs-review-row">
+    <a href="{{ url_for('edit.edit', recipe_id=r['id']) }}">{{ r['title'] }}</a>
+    <span class="hint">{{ r['category_name'] or 'Uncategorized' }} &middot; {{ r['source_pdf'] }} p{{ r['source_page'] }}</span>
+  </li>
+  {% endfor %}
+</ul>
+{% else %}
+<p class="empty-state">Nothing flagged. Nice.</p>
+{% endif %}
+{% endblock %}
