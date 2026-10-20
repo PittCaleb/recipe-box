@@ -5,8 +5,8 @@ A personal recipe web app, served on the home Wi-Fi from the owner's Mac.
 > **Note:** `pdf/` (source scans) and `data/` (the database, images, and
 > everything else generated from them) are gitignored and not part of this
 > repo — they contain real recipes and family info. A fresh clone starts
-> with an empty database; see "Re-running the PDF import" below to load
-> your own recipes.
+> with an empty database; see "Getting recipes from a PDF into the app"
+> below to load your own recipes.
 
 ## Setup
 
@@ -15,7 +15,14 @@ python3 -m venv .venv
 source .venv/bin/activate
 brew install pango   # required by WeasyPrint for PDF generation
 pip install -r requirements.txt
+cp .env.example .env   # then fill in ANTHROPIC_API_KEY if you want PDF import -- see below
 ```
+
+Every setting is a plain environment variable (see Configuration below);
+`.env` is just a convenient, gitignored place to keep them so you don't have
+to `export` them in every terminal session. The app loads it automatically
+on startup via `python-dotenv`. A real environment variable (set by your
+shell, Docker, launchd, etc.) always takes priority over `.env`.
 
 ## Running
 
@@ -37,6 +44,114 @@ All settings are environment variables with sensible defaults; see `config.py`:
 | `RECIPES_SHARE_BACKEND` | `mac` on macOS, else `none` | `mac`, `smtp`, or `none` |
 | `RECIPES_APP_PASSWORD` | unset | If set, editing/admin/sharing require login |
 | `RECIPES_COOKBOOK_TITLE` | `Our Family Recipes` | Default cookbook cover title |
+| `ANTHROPIC_API_KEY` | unset | Required for **Admin → Import a new PDF** (see below) |
+| `RECIPES_IMPORT_MODEL` | `claude-opus-5-5` | Model used to transcribe uploaded PDFs |
+| `RECIPES_PDF_DIR` | `./pdf` | Where source and uploaded PDFs live |
+
+## Getting recipes from a PDF into the app
+
+A scanned PDF of recipe cards doesn't turn itself into structured recipes —
+something has to read each card. There are three ways to do that, in order
+of least to most manual effort. **None of them is mandatory** — pick
+whichever fits what you have access to.
+
+### Option A: Admin → Import a new PDF (automatic, costs a little money)
+
+Upload a PDF from the browser and the app does everything: renders each
+page, calls the Claude API to transcribe every recipe it finds (title,
+ingredients, instructions, contributor, category guess, a crop box per
+recipe), crops a scan image per recipe, and stages it all for your review —
+nothing touches your real collection until you hit **Commit** (or
+**Discard** to throw the batch away). Details and known limitations below.
+
+Requires an `ANTHROPIC_API_KEY` (see the next section) and costs roughly a
+few cents per page in API usage. Best if you want the least manual work and
+don't mind the small cost.
+
+### Option B: Transcribe it yourself with an AI coding assistant (free if you already have one)
+
+This is literally how this project's own 65 recipes were imported — no
+separate API key was used, because the transcription was done by an AI
+coding assistant (e.g. Claude Code) reading each page image interactively
+in the same way it reads any other file, using whatever Claude access the
+person was already paying for (Pro/Max/Claude Code), not the pay-as-you-go
+API.
+
+The steps (the same ones **SPEC.md section 5** describes in full, including
+the exact transcription rules the assistant should follow — wording as
+written, sub-group headings, `[?guess?]` markers, margin notes, etc.):
+
+1. Put your PDF at `pdf/<something>.pdf`.
+2. `python -m importer.render_pages` — renders every page to
+   `data/import/pages/*.png`.
+3. Ask your assistant to look at each rendered page and write
+   `data/import/seed.json` (recipe data) and `data/import/crops.json` (crop
+   boxes), following SPEC.md section 5's rules. For more than a handful of
+   pages, expect this to be a real back-and-forth working session, not one
+   prompt — that's normal; it's exactly how the original import went.
+4. `python -m importer.crop_scans` — crops a scan image per recipe from
+   `crops.json`.
+5. `python -m importer.load_seed` — loads `seed.json` into the database.
+   Refuses to run if `recipes` already has rows (protects your existing
+   data) — pass `--force` to wipe and reload instead.
+
+No `ANTHROPIC_API_KEY` needed for this path — it rides on whatever Claude
+access you already have, not a separate Console account.
+
+### Option C: Type it in by hand (free, no AI at all)
+
+Run `python -m importer.render_pages` to get page images in
+`data/import/pages/`, keep those open next to the browser, and use the
+app's own **New recipe** form to type each one in — no scripts, no AI,
+just data entry. Slowest option, but it needs nothing beyond the app
+itself.
+
+---
+
+## Getting an Anthropic API key
+
+Only needed for **Option A** above. Skip this whole section if you're using
+Option B or C.
+
+1. Go to **[console.anthropic.com](https://console.anthropic.com)** and sign
+   up or log in. This is the **developer console**, separate from a
+   claude.ai subscription — a claude.ai Pro/Max plan doesn't include API
+   access, and API usage isn't covered by one.
+2. If this is a new account, add a payment method under **Settings →
+   Billing** and add a small amount of credit. API usage is billed per
+   request (pay-as-you-go, no subscription) — transcribing a page of a
+   recipe card costs a few cents, so even a $5 balance covers a large batch.
+3. Go to **Settings → API Keys** (left sidebar).
+4. Click **Create Key**, give it a name you'll recognize later (e.g.
+   `recipes-app`), and create it.
+5. Copy the key immediately — it's only shown once. It starts with
+   `sk-ant-`.
+6. Paste it into `.env`:
+   ```
+   ANTHROPIC_API_KEY=sk-ant-...
+   ```
+7. Restart the app (`python run.py`) if it was already running.
+
+Keep this key private — anyone with it can run up charges on your account.
+Don't paste it into a chat, commit it, or put it anywhere other than `.env`
+(which is gitignored) or a real environment variable. If you ever suspect
+it leaked, revoke it from the same **API Keys** page and create a new one.
+
+## Option A details: importing a new PDF from the browser
+
+Without `ANTHROPIC_API_KEY` set, the Import page shows a warning instead of
+starting a job. Once it's set, **Admin → Import a new PDF** runs in a
+background thread; the progress page polls and updates itself, so you can
+navigate away — any batch that isn't committed yet shows up under
+**Admin → Unfinished imports** so you can get back to it.
+
+Known limitation: each page is transcribed independently, with no awareness
+of neighboring pages. A recipe whose instructions continue onto another
+page — adjacent or not, same as a couple of recipes in the original
+collection — won't be stitched together automatically. It comes through
+with `needs_review` set and a note that the instructions look cut off; you
+finish it by hand afterward (open the recipe, check the next page's scan if
+needed, and paste in the rest) via the normal edit screen.
 
 ## macOS permissions (for email/text sharing)
 
@@ -64,12 +179,6 @@ A few things worth knowing:
   folder will accumulate copies over time; it's safe to empty periodically.
 - If `RECIPES_APP_PASSWORD` is set, Email/Text (like Edit and Admin) require
   logging in first.
-
-## Re-running the PDF import
-
-See `importer/` and SPEC.md section 5. The loader refuses to run if the
-`recipes` table already has rows, to protect your edits — pass `--force` to
-wipe and reload.
 
 ## Tests
 

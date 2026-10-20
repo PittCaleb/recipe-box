@@ -3,9 +3,22 @@
 {% block content %}
 <h1>Admin</h1>
 <ul class="admin-menu">
+  <li><a href="{{ url_for('import_pdf.new') }}">Import a new PDF</a></li>
   <li><a href="{{ url_for('admin.categories') }}">Categories</a></li>
   <li><a href="{{ url_for('admin.needs_review') }}">Needs-review queue</a></li>
   <li><a href="{{ url_for('admin.export') }}">Export backup (.txt)</a></li>
   <li><a href="{{ url_for('admin.cookbook') }}">Print cookbook</a></li>
 </ul>
+
+{% if recent_imports %}
+<h2>Unfinished imports</h2>
+<ul class="needs-review-list">
+  {% for b in recent_imports %}
+  <li class="needs-review-row">
+    <a href="{{ url_for('import_pdf.progress', batch_id=b['id']) }}">{{ b['original_filename'] }}</a>
+    <span class="hint">{{ b['status'] }}{% if b['status'] == 'error' %} &mdash; {{ b['error_message'] }}{% endif %}</span>
+  </li>
+  {% endfor %}
+</ul>
+{% endif %}
 {% endblock %}

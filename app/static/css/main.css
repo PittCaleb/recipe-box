@@ -753,6 +753,29 @@ button {
   border-radius: var(--radius);
 }
 
+/* Import review */
+.import-review-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+.import-review-row {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 0.75rem;
+}
+.import-review-row--flagged {
+  border-color: #e0a85f;
+}
+.import-review-row-main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+}
+
 /* Print */
 @media print {
   .no-print {

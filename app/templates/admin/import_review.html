@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}Review import{% endblock %}
+{% block content %}
+<h1>Review import: {{ batch['original_filename'] }}</h1>
+
+{% if batch['status'] == 'error' and not recipes %}
+<p class="share-status share-status--error">Import failed: {{ batch['error_message'] }}</p>
+<form method="post" action="{{ url_for('import_pdf.discard', batch_id=batch['id']) }}">
+  <button type="submit" class="btn btn-danger">Discard</button>
+</form>
+{% else %}
+
+{% if batch['error_message'] %}
+<p class="share-status share-status--error">Some pages had trouble: {{ batch['error_message'] }}</p>
+{% endif %}
+
+<p class="hint">
+  {{ recipes|length }} recipe{{ 's' if recipes|length != 1 }} found across
+  {{ batch['total_pages'] }} page{{ 's' if batch['total_pages'] != 1 }}.
+  Uncheck anything you don't want, fix titles/categories, then commit.
+  You can fine-tune ingredients and instructions afterward from the normal
+  edit screen.
+</p>
+
+<datalist id="category-options">
+  {% for c in categories %}<option value="{{ c['name'] }}">{% endfor %}
+</datalist>
+
+<form method="post" action="{{ url_for('import_pdf.commit', batch_id=batch['id']) }}">
+  <div class="import-review-list">
+    {% for r in recipes %}
+    <div class="import-review-row {% if r['needs_review'] %}import-review-row--flagged{% endif %}">
+      <div class="import-review-row-main">
+        <label class="toggle-chip">
+          <input type="checkbox" name="include_{{ r['id'] }}" value="1" checked>
+          Include
+        </label>
+        <input type="text" name="title_{{ r['id'] }}" value="{{ r['title'] }}" class="ingredient-text" style="flex:1 1 220px;">
+        <input type="text" name="category_{{ r['id'] }}" value="{{ r['proposed_category'] or '' }}"
+               list="category-options" class="category-rename-input" style="flex:0 1 220px;"
+               placeholder="Category">
+        <span class="hint">p. {{ r['source_page'] }}</span>
+        {% if r['needs_review'] %}<span class="badge badge-review">Needs review</span>{% endif %}
+        {% if r['scan_filename'] %}
+        <a class="btn" href="{{ url_for('media.scan', filename=r['scan_filename']) }}" target="_blank" rel="noopener">View scan</a>
+        {% endif %}
+      </div>
+      {% if r['review_note'] %}<p class="hint">{{ r['review_note'] }}</p>{% endif %}
+      <details>
+        <summary class="hint">Ingredients &amp; instructions preview</summary>
+        <ul class="ingredient-list">
+          {% for ing in r['ingredients'] %}
+            {% if ing['kind'] == 'heading' %}
+              <li class="ingredient-heading">{{ ing['raw_text'] }}</li>
+            {% else %}
+              <li class="ingredient-item">{{ ing['raw_text'] }}</li>
+            {% endif %}
+          {% endfor %}
+        </ul>
+        <div class="rich-text">{{ r['instructions_html']|safe }}</div>
+        {% if r['notes'] %}
+        <ul class="note-list">
+          {% for n in r['notes'] %}<li class="note"><p class="note-body">{{ n }}</p></li>{% endfor %}
+        </ul>
+        {% endif %}
+      </details>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="edit-form-actions">
+    <button type="submit" class="btn btn-primary">Commit selected recipes</button>
+  </div>
+</form>
+
+<form method="post" action="{{ url_for('import_pdf.discard', batch_id=batch['id']) }}"
+      data-confirm="Discard this whole import? Nothing will be added.">
+  <button type="submit" class="btn btn-danger">Discard entire import</button>
+</form>
+{% endif %}
+{% endblock %}
+{% block head %}
+<script src="{{ url_for('static', filename='js/recipe.js') }}" defer></script>
+{% endblock %}
