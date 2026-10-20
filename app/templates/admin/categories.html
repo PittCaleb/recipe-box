@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Categories{% endblock %}
+{% block content %}
+<h1>Categories</h1>
+
+<ul class="category-admin-list">
+  {% for c in categories %}
+  <li class="category-admin-row">
+    <form method="post" action="{{ url_for('admin.categories_rename', category_id=c['id']) }}" class="inline-form category-rename-form">
+      <input type="text" name="name" value="{{ c['name'] }}" class="category-rename-input">
+      <button type="submit" class="btn">Rename</button>
+    </form>
+    <span class="hint">{{ c['recipe_count'] }} recipe{{ 's' if c['recipe_count'] != 1 }}</span>
+    <form method="post" action="{{ url_for('admin.categories_move', category_id=c['id']) }}" class="inline-form">
+      <input type="hidden" name="direction" value="up">
+      <button type="submit" class="icon-button row-btn" aria-label="Move up">&uarr;</button>
+    </form>
+    <form method="post" action="{{ url_for('admin.categories_move', category_id=c['id']) }}" class="inline-form">
+      <input type="hidden" name="direction" value="down">
+      <button type="submit" class="icon-button row-btn" aria-label="Move down">&darr;</button>
+    </form>
+    <form method="post" action="{{ url_for('admin.categories_delete', category_id=c['id']) }}" class="inline-form"
+          data-confirm="Delete '{{ c['name'] }}'? Its {{ c['recipe_count'] }} recipe(s) will become uncategorized.">
+      <button type="submit" class="btn btn-danger">Delete</button>
+    </form>
+  </li>
+  {% endfor %}
+</ul>
+
+<form method="post" action="{{ url_for('admin.categories_add') }}" class="add-category-form">
+  <input type="text" name="name" placeholder="New category name" required>
+  <button type="submit" class="btn btn-primary">Add category</button>
+</form>
+{% endblock %}
+{% block head %}
+<script src="{{ url_for('static', filename='js/recipe.js') }}" defer></script>
+{% endblock %}
