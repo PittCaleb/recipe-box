@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Import a new PDF{% endblock %}
+{% block content %}
+<h1>Import a new PDF</h1>
+<p class="hint">
+  Upload a scanned recipe PDF. The server will render each page, ask Claude
+  to transcribe every recipe it finds, and crop a scan image per recipe.
+  Nothing is added to your recipe collection until you review and confirm
+  it on the next screen.
+</p>
+
+<form method="post" enctype="multipart/form-data" class="edit-form">
+  <div class="field">
+    <label for="pdf">PDF file</label>
+    <input type="file" id="pdf" name="pdf" accept="application/pdf" required>
+  </div>
+  <div class="field">
+    <label for="default_contributor">Default contributor (optional)</label>
+    <input type="text" id="default_contributor" name="default_contributor"
+           placeholder="Used only for cards with no name shown">
+  </div>
+  <div class="edit-form-actions">
+    <button type="submit" class="btn btn-primary">Start import</button>
+  </div>
+</form>
+{% endblock %}

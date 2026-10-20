@@ -10,6 +10,7 @@ from config import Config
 @pytest.fixture
 def cfg(tmp_path):
     c = Config()
+    c.PDF_DIR = tmp_path / "pdf"
     c.DATA_DIR = tmp_path / "data"
     return c
 
