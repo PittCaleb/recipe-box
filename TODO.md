@@ -38,5 +38,9 @@ Open items, shelved for now — nothing here blocks using the app day to day.
 ~18 duplicate/near-duplicate recipes exist across `recipes.pdf` and
 `recipes2.pdf` (same dish transcribed more than once), plus a few
 contributor-attribution conflicts. All are flagged with `needs_review` and
-an explanatory note — see **Admin → Needs-review queue** to work through
-them whenever you feel like it.
+an explanatory note.
+
+- [x] Built **Menu → Admin → Duplicates**: finds 18 likely-duplicate groups,
+  compares them side by side, merges or dismisses each.
+- [ ] Work through the 18 groups.
+- [ ] Then clear the remaining non-duplicate items in the Needs-review queue.
