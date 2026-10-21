@@ -1,11 +1,9 @@
-from flask import Blueprint, abort, current_app, jsonify, request, send_file
+from flask import Blueprint, abort, current_app, request, send_file
 
 from app import get_db
 from app.models.recipes import get_recipe
-from app.rendering.jpg import render_recipe_jpg
+from app.rendering.image import render_recipe_png
 from app.rendering.pdf import render_recipe_pdf
-from app.sharing import get_backend
-from app.sharing.validate import validate_email, validate_imessage_target
 
 bp = Blueprint("share", __name__, url_prefix="/recipes")
 
@@ -40,11 +38,10 @@ def _build_pdf(data, recipe_id):
     return out_path
 
 
-def _build_jpg(data, recipe_id):
+def _build_png(data, recipe_id):
     pdf_path = _build_pdf(data, recipe_id)
-    cfg = _cfg()
-    out_path = cfg.TMP_DIR / f"recipe-{recipe_id}.jpg"
-    render_recipe_jpg(pdf_path, out_path)
+    out_path = _cfg().TMP_DIR / f"recipe-{recipe_id}.png"
+    render_recipe_png(pdf_path, out_path)
     return out_path
 
 
@@ -65,42 +62,16 @@ def download_pdf(recipe_id):
     )
 
 
-@bp.route("/<int:recipe_id>/email", methods=["POST"])
-def email(recipe_id):
+@bp.route("/<int:recipe_id>/image")
+def download_image(recipe_id):
+    """The recipe as one PNG. ?download=1 saves it as a file; without it the
+    image is served inline, which is what the Copy button fetches."""
     db = get_db()
     data = _get_or_404(db, recipe_id)
-    cfg = _cfg()
-    backend = get_backend(cfg)
-
-    if not backend.supports_email():
-        return jsonify(success=False, message="Email isn't available on this server."), 400
-
-    to = validate_email(request.form.get("to"))
-    if not to:
-        return jsonify(success=False, message="Enter a valid email address."), 400
-    message = request.form.get("message", "").strip()
-
-    pdf_path = _build_pdf(data, recipe_id)
-    title = data["recipe"]["title"]
-    result = backend.send_email(to, f"Recipe: {title}", message, pdf_path)
-    return jsonify(success=result.success, message=result.message)
-
-
-@bp.route("/<int:recipe_id>/text", methods=["POST"])
-def text(recipe_id):
-    db = get_db()
-    data = _get_or_404(db, recipe_id)
-    cfg = _cfg()
-    backend = get_backend(cfg)
-
-    if not backend.supports_imessage():
-        return jsonify(success=False, message="Text isn't available on this server."), 400
-
-    to = validate_imessage_target(request.form.get("to"))
-    if not to:
-        return jsonify(success=False, message="Enter a valid phone number or iMessage email."), 400
-    message = request.form.get("message", "").strip()
-
-    jpg_path = _build_jpg(data, recipe_id)
-    result = backend.send_imessage(to, message, jpg_path)
-    return jsonify(success=result.success, message=result.message)
+    png_path = _build_png(data, recipe_id)
+    return send_file(
+        png_path, mimetype="image/png",
+        as_attachment=request.args.get("download") == "1",
+        download_name=_safe_filename(data["recipe"]["title"], "png"),
+        max_age=0,
+    )

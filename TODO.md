@@ -2,22 +2,19 @@
 
 Open items, shelved for now — nothing here blocks using the app day to day.
 
-## Phase 5 — confirm real sharing sends
+## Recipe image export — confirm in a real browser
 
-- [ ] Open a recipe → **Email**, send to a real address, confirm it arrives.
-  First attempt will trigger a macOS prompt: "Terminal (or Python) wants
-  access to control Mail." Click OK.
-- [ ] Open a recipe → **Text**, send to a real phone/iMessage address, confirm
-  it arrives. First attempt will trigger a similar prompt for Messages.
-- [ ] If either fails, report the exact error text back — the sharing code
-  is in `app/sharing/mac.py`.
+- [ ] On the Mac at `http://127.0.0.1:5050`, open a recipe → **Copy image**,
+  paste into Messages/Notes, confirm the image arrives intact.
+- [ ] **Save image** on the Mac and on a phone — confirm the PNG downloads
+  and is readable. (Copy is intentionally hidden on the phone's LAN address.)
 
 ## Phase 7 — mobile check on a real device
 
 - [ ] On your phone or tablet (same Wi-Fi as the Mac), open the LAN URL
   `run.py` prints on startup (e.g. `http://192.168.0.137:5050`).
 - [ ] Walk through: browse/search, open a recipe, use the Adjust slider,
-  add a note, take/upload a photo, print.
+  add a note, take/upload a photo, print, Save image.
 - [ ] Flag anything that looks cramped, misaligned, or hard to tap.
 
 ## Feature request — browse page: card/text view toggle
