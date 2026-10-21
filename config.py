@@ -1,5 +1,4 @@
 import os
-import platform
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -10,15 +9,10 @@ from dotenv import load_dotenv
 load_dotenv(Path(__file__).resolve().parent / ".env")
 
 
-def _default_share_backend():
-    return "mac" if platform.system() == "Darwin" else "none"
-
-
 class Config:
     DATA_DIR = Path(os.environ.get("RECIPES_DATA_DIR", "./data")).resolve()
     HOST = os.environ.get("RECIPES_HOST", "0.0.0.0")
     PORT = int(os.environ.get("RECIPES_PORT", "5050"))
-    SHARE_BACKEND = os.environ.get("RECIPES_SHARE_BACKEND", _default_share_backend())
     APP_PASSWORD = os.environ.get("RECIPES_APP_PASSWORD") or None
     COOKBOOK_TITLE = os.environ.get("RECIPES_COOKBOOK_TITLE", "Our Family Recipes")
     ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY") or None

@@ -41,8 +41,7 @@ All settings are environment variables with sensible defaults; see `config.py`:
 | `RECIPES_DATA_DIR` | `./data` | All mutable data (db, images, scans, exports) |
 | `RECIPES_HOST` | `0.0.0.0` | Listen address |
 | `RECIPES_PORT` | `5050` | Port (5000 is taken by macOS AirPlay) |
-| `RECIPES_SHARE_BACKEND` | `mac` on macOS, else `none` | `mac`, `smtp`, or `none` |
-| `RECIPES_APP_PASSWORD` | unset | If set, editing/admin/sharing require login |
+| `RECIPES_APP_PASSWORD` | unset | If set, editing and admin require login (viewing, printing, and exports stay open) |
 | `RECIPES_COOKBOOK_TITLE` | `Our Family Recipes` | Default cookbook cover title |
 | `ANTHROPIC_API_KEY` | unset | Required for **Admin → Import a new PDF** (see below) |
 | `RECIPES_IMPORT_MODEL` | `claude-opus-5-5` | Model used to transcribe uploaded PDFs |
@@ -153,32 +152,20 @@ with `needs_review` set and a note that the instructions look cut off; you
 finish it by hand afterward (open the recipe, check the next page's scan if
 needed, and paste in the rest) via the normal edit screen.
 
-## macOS permissions (for email/text sharing)
+## Sharing a recipe
 
-Email and Text on a recipe page work by having the server run a small
-AppleScript (via `osascript`) that tells Mail.app or Messages.app to send on
-your behalf. The first time each happens, macOS shows a permission prompt:
+The app doesn't send anything itself — no email or message accounts to set
+up. Each recipe page has export buttons, and you share the result however
+you like:
 
-- **"Terminal" (or "Python") wants access to control "Mail".** Click **OK**.
-- **"Terminal" (or "Python") wants access to control "Messages".** Click **OK**.
-
-If you click **Don't Allow** by accident (or need to re-enable later), go to
-**System Settings → Privacy & Security → Automation**, find Terminal (or
-whichever app is running `python run.py`), and turn on the Mail and Messages
-toggles.
-
-A few things worth knowing:
-- **Mail.app and Messages.app must be signed in and set up** on this Mac —
-  the app drives them, it doesn't implement email/iMessage itself.
-- **Text** requires an active iMessage account signed in to Messages.app;
-  sending to a non-iMessage phone number (green-bubble SMS) isn't supported
-  by this integration.
-- Attachments sent over Messages are first copied into
-  `~/Pictures/RecipeShare/` — Messages can silently fail to attach files
-  from arbitrary paths, and sending from that folder works around it. That
-  folder will accumulate copies over time; it's safe to empty periodically.
-- If `RECIPES_APP_PASSWORD` is set, Email/Text (like Edit and Admin) require
-  logging in first.
+- **Print** — the browser's print dialog, with a print-friendly layout.
+- **Save PDF** — downloads the recipe as a PDF.
+- **Save image** — downloads the recipe as one PNG image (handy for a text
+  message or a photo album).
+- **Copy image** — puts that same PNG on your clipboard to paste anywhere.
+  Browsers only allow this on `https://` or `localhost`, so the button only
+  appears when the app is opened that way (e.g. `http://127.0.0.1:5050` on
+  the Mac itself). On a phone using the LAN address, use **Save image**.
 
 ## Tests
 
