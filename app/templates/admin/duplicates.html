@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Duplicates{% endblock %}
+{% block content %}
+<h1>Likely duplicates</h1>
+{% if groups %}
+<p class="hint">
+  {{ groups|length }} group{{ 's' if groups|length != 1 }} of recipes that look like copies of each other
+  (similar titles, and similar ingredients when the titles differ). Open one to compare them side by side.
+</p>
+<ul class="needs-review-list">
+  {% for g in groups %}
+  <li class="needs-review-row dup-group-row">
+    <a href="{{ url_for('duplicates.compare', ids=g.ids) }}" class="dup-group-link">
+      <strong>{{ g.name }}</strong>
+      <span class="hint">{{ g.titles|length }} copies: {{ g.titles|join(' · ') }}</span>
+    </a>
+  </li>
+  {% endfor %}
+</ul>
+{% else %}
+<p class="empty-state">No likely duplicates left.</p>
+{% endif %}
+{% endblock %}

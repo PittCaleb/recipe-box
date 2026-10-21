@@ -2,6 +2,7 @@
 {% block title %}Needs review{% endblock %}
 {% block content %}
 <h1>Needs-review queue</h1>
+<p class="hint">Many of these are duplicate copies &mdash; <a href="{{ url_for('duplicates.index') }}">compare and merge them side by side</a> first.</p>
 {% if recipes %}
 <ul class="needs-review-list">
   {% for r in recipes %}
