@@ -28,6 +28,7 @@ def create_app(config_obj=None):
     from app.routes.admin import bp as admin_bp
     from app.routes.share import bp as share_bp
     from app.routes.import_pdf import bp as import_pdf_bp
+    from app.routes.duplicates import bp as duplicates_bp
     from app.routes.auth import bp as auth_bp, require_login
     app.register_blueprint(browse_bp)
     app.register_blueprint(recipe_bp)
@@ -36,6 +37,7 @@ def create_app(config_obj=None):
     app.register_blueprint(admin_bp)
     app.register_blueprint(share_bp)
     app.register_blueprint(import_pdf_bp)
+    app.register_blueprint(duplicates_bp)
     app.register_blueprint(auth_bp)
 
     app.before_request(require_login)
