@@ -108,7 +108,7 @@ def test_recipe_view_shows_delete_button_when_authenticated(client, db):
     sync_fts(db, rid, "Deletable From View")
     resp = client.get(f"/recipes/{rid}")
     assert f'/recipes/{rid}/delete'.encode() in resp.data
-    assert b">Delete<" in resp.data
+    assert b'aria-label="Delete recipe"' in resp.data
 
 
 def test_delete_recipe_removes_row_and_cascades(client, db):

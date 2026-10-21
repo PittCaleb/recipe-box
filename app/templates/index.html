@@ -1,18 +1,39 @@
 {% extends "base.html" %}
+{% from "_icons.html" import icon %}
 {% block title %}Recipes{% endblock %}
 {% block content %}
 <form id="search-form" class="browse-controls" data-search-url="{{ url_for('browse.api_search') }}">
-  <input
-    type="search"
-    name="q"
-    id="search-input"
-    class="search-input"
-    placeholder="Search recipes, ingredients, contributors&hellip;"
-    value="{{ params.q }}"
-    autocomplete="off"
-  >
+  <div class="browse-row view-toggles">
+    <div class="pill-group" data-pill-group="display" role="group" aria-label="Display style">
+      <button type="button" class="pill-btn {% if params.display == 'card' %}is-active{% endif %}" data-value="card" aria-pressed="{{ 'true' if params.display == 'card' else 'false' }}">
+        {{ icon('grid', 15) }}<span>Cards</span>
+      </button>
+      <button type="button" class="pill-btn {% if params.display == 'text' %}is-active{% endif %}" data-value="text" aria-pressed="{{ 'true' if params.display == 'text' else 'false' }}">
+        {{ icon('list', 15) }}<span>Text</span>
+      </button>
+    </div>
+    <div class="pill-group" data-pill-group="group" id="group-toggle" role="group" aria-label="Group by">
+      <button type="button" class="pill-btn {% if params.group == 'alpha' %}is-active{% endif %}" data-value="alpha" aria-pressed="{{ 'true' if params.group == 'alpha' else 'false' }}">A&ndash;Z</button>
+      <button type="button" class="pill-btn {% if params.group == 'category' %}is-active{% endif %}" data-value="category" aria-pressed="{{ 'true' if params.group == 'category' else 'false' }}">Category</button>
+    </div>
+    <input type="hidden" name="display" id="display-input" value="{{ params.display }}">
+    <input type="hidden" name="group" id="group-input" value="{{ params.group }}">
+  </div>
 
-  <div class="browse-row">
+  <div class="browse-row search-row">
+    <span class="search-input-icon" aria-hidden="true">{{ icon('search', 16) }}</span>
+    <input
+      type="search"
+      name="q"
+      id="search-input"
+      class="search-input"
+      placeholder="Search recipes, ingredients, contributors&hellip;"
+      value="{{ params.q }}"
+      autocomplete="off"
+    >
+  </div>
+
+  <div class="browse-row filter-row">
     <select name="category" id="category-select" class="category-select">
       <option value="">All categories</option>
       {% for c in categories %}
@@ -25,9 +46,7 @@
       <option value="recent_made" {% if params.sort == 'recent_made' %}selected{% endif %}>Recently made</option>
       <option value="recent_added" {% if params.sort == 'recent_added' %}selected{% endif %}>Recently added</option>
     </select>
-  </div>
 
-  <div class="browse-row browse-toggles">
     <label class="toggle-chip">
       <input type="checkbox" name="needs_review" value="1" {% if params.needs_review %}checked{% endif %}>
       Needs review
@@ -36,11 +55,13 @@
       <input type="checkbox" name="favorites" value="1" {% if params.favorites %}checked{% endif %}>
       Favorites
     </label>
+
+    <span class="results-count" id="results-count" aria-live="polite">{{ count_text }}</span>
   </div>
 </form>
 
 <div id="results">
-  {% include "partials/_recipe_cards.html" %}
+  {% include "partials/_recipe_results.html" %}
 </div>
 {% endblock %}
 {% block head %}
