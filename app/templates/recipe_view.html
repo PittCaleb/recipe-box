@@ -41,12 +41,10 @@
     <div class="action-group">
       <button type="button" class="icon-btn" onclick="window.print()" aria-label="Print">{{ icon('printer') }}</button>
       <a class="icon-btn" href="{{ url_for('share.download_pdf', recipe_id=recipe['id']) }}" aria-label="Save PDF">{{ icon('download') }}</a>
-      {% if can_email %}
-      <button type="button" class="icon-btn" data-open-modal="email-modal" aria-label="Email">{{ icon('mail') }}</button>
-      {% endif %}
-      {% if can_text %}
-      <button type="button" class="icon-btn" data-open-modal="text-modal" aria-label="Text">{{ icon('message') }}</button>
-      {% endif %}
+      <a class="icon-btn" href="{{ url_for('share.download_image', recipe_id=recipe['id'], download=1) }}" aria-label="Save image">{{ icon('image-down') }}</a>
+      <button type="button" class="icon-btn" id="copy-image-btn" hidden
+              data-image-url="{{ url_for('share.download_image', recipe_id=recipe['id']) }}"
+              aria-label="Copy image">{{ icon('copy') }}</button>
       {% if recipe['scan_filename'] %}
       <button type="button" class="icon-btn" data-open-modal="scan-modal" aria-label="View original scan">{{ icon('image') }}</button>
       {% endif %}
@@ -150,55 +148,7 @@
   </div>
 </div>
 
-{% if can_email %}
-<div class="modal" id="email-modal" hidden>
-  <div class="modal-backdrop" data-close-modal></div>
-  <div class="modal-content">
-    <button type="button" class="modal-close" data-close-modal aria-label="Close">&times;</button>
-    <h2>Email this recipe</h2>
-    <form data-share-form data-share-url="{{ url_for('share.email', recipe_id=recipe['id']) }}">
-      <div class="field">
-        <label for="email-to">Recipient email</label>
-        <input type="email" id="email-to" name="to" required>
-      </div>
-      <div class="field">
-        <label for="email-message">Message (optional)</label>
-        <textarea id="email-message" name="message" rows="3" class="note-textarea"></textarea>
-      </div>
-      <p class="share-status" hidden></p>
-      <div class="modal-actions">
-        <button type="button" class="btn btn-secondary" data-close-modal>Cancel</button>
-        <button type="submit" class="btn btn-primary">Send</button>
-      </div>
-    </form>
-  </div>
-</div>
-{% endif %}
-
-{% if can_text %}
-<div class="modal" id="text-modal" hidden>
-  <div class="modal-backdrop" data-close-modal></div>
-  <div class="modal-content">
-    <button type="button" class="modal-close" data-close-modal aria-label="Close">&times;</button>
-    <h2>Text this recipe</h2>
-    <form data-share-form data-share-url="{{ url_for('share.text', recipe_id=recipe['id']) }}">
-      <div class="field">
-        <label for="text-to">Phone number or iMessage email</label>
-        <input type="text" id="text-to" name="to" required>
-      </div>
-      <div class="field">
-        <label for="text-message">Message (optional)</label>
-        <textarea id="text-message" name="message" rows="3" class="note-textarea"></textarea>
-      </div>
-      <p class="share-status" hidden></p>
-      <div class="modal-actions">
-        <button type="button" class="btn btn-secondary" data-close-modal>Cancel</button>
-        <button type="submit" class="btn btn-primary">Send</button>
-      </div>
-    </form>
-  </div>
-</div>
-{% endif %}
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
 <div class="modal" id="note-modal" hidden>
   <div class="modal-backdrop" data-close-modal></div>
