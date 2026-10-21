@@ -27,39 +27,48 @@
     });
   });
 
-  // --- Email / Text sharing ---
-  document.querySelectorAll("form[data-share-form]").forEach((form) => {
-    const status = form.querySelector(".share-status");
-    const submitBtn = form.querySelector("button[type=submit]");
+  // --- Copy recipe image to clipboard ---
+  const toast = document.getElementById("toast");
+  let toastTimer = null;
+  function showToast(message, isError) {
+    if (!toast) return;
+    toast.textContent = message;
+    toast.classList.toggle("toast--error", Boolean(isError));
+    toast.hidden = false;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => {
+      toast.hidden = true;
+    }, 3000);
+  }
 
-    form.addEventListener("submit", (e) => {
-      e.preventDefault();
-      status.hidden = true;
-      status.classList.remove("share-status--ok", "share-status--error");
-      submitBtn.disabled = true;
-      submitBtn.textContent = "Sending…";
-
-      fetch(form.dataset.shareUrl, { method: "POST", body: new FormData(form) })
-        .then((res) => res.json().then((data) => ({ ok: res.ok, data })))
-        .then(({ ok, data }) => {
-          status.hidden = false;
-          status.textContent = data.message;
-          status.classList.add(ok && data.success ? "share-status--ok" : "share-status--error");
-          if (ok && data.success) {
-            form.reset();
-          }
-        })
-        .catch(() => {
-          status.hidden = false;
-          status.textContent = "Something went wrong sending this.";
-          status.classList.add("share-status--error");
+  const copyBtn = document.getElementById("copy-image-btn");
+  // Browsers only allow writing images to the clipboard on https:// or
+  // localhost; elsewhere (e.g. a phone on the LAN over http) the button
+  // stays hidden and "Save image" is the way to go.
+  if (copyBtn && window.isSecureContext && navigator.clipboard && window.ClipboardItem) {
+    copyBtn.hidden = false;
+    copyBtn.addEventListener("click", () => {
+      copyBtn.disabled = true;
+      copyBtn.classList.add("is-busy");
+      // Safari requires ClipboardItem to be created synchronously inside the
+      // click, so hand it a promise for the image rather than awaiting first.
+      const blob = fetch(copyBtn.dataset.imageUrl).then((res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.blob();
+      });
+      navigator.clipboard
+        .write([new ClipboardItem({ "image/png": blob })])
+        .then(() => showToast("Recipe image copied — paste it anywhere."))
+        .catch((err) => {
+          console.error(err);
+          showToast("Couldn't copy the image. Try Save image instead.", true);
         })
         .finally(() => {
-          submitBtn.disabled = false;
-          submitBtn.textContent = "Send";
+          copyBtn.disabled = false;
+          copyBtn.classList.remove("is-busy");
         });
     });
-  });
+  }
 
   // --- Adjust (scaling) ---
   const adjustPanel = document.getElementById("adjust-panel");

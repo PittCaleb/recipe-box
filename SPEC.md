@@ -245,6 +245,13 @@ Unit tests are required, with at least 30 realistic old-recipe-card lines.
 - Replacing an image deletes the old files. Removing the image is also an option.
 
 ### 6.7 Print, PDF, email, and iMessage
+
+> **Superseded (2026-10-20):** email and iMessage sending were removed. They
+> only worked by driving Mail.app/Messages.app on the host Mac, which can't
+> carry over to a NAS/Docker deployment and always sent from the owner's
+> accounts. Replaced by **Save image** (one stacked PNG, same rendering as the
+> JPG below) and **Copy image** (clipboard; https/localhost only). Print and
+> Save PDF are unchanged. The original design is kept below for reference.
 - **Recipe PDF:** WeasyPrint from a dedicated print template that includes the title, metadata, image, ingredients, instructions, and notes. The result should look like a clean, modern recipe page.
 - **Recipe JPG** (for iMessage): render the same PDF, rasterize it with PyMuPDF at about 150 DPI, and stack pages vertically into one JPG.
 - **Email:** a modal asks for a recipient address (typed each time) and an optional message. The server builds the PDF and **sends immediately** via Mail.app using AppleScript (`osascript`), with the PDF attached and the subject "Recipe: {title}". The UI shows success or failure.
