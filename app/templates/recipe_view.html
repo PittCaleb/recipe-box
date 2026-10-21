@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_icons.html" import icon %}
 {% block title %}{{ recipe['title'] }}{% endblock %}
 {% block content %}
 <article class="recipe-view">
@@ -6,8 +7,8 @@
     <div class="recipe-header-top">
       <h1 class="recipe-title">{{ recipe['title'] }}</h1>
       <form method="post" action="{{ url_for('recipe.favorite', recipe_id=recipe['id']) }}" class="inline-form">
-        <button type="submit" class="icon-button favorite-toggle {% if recipe['favorite'] %}is-active{% endif %}" aria-pressed="{{ 'true' if recipe['favorite'] else 'false' }}" title="Favorite">
-          &#9733;
+        <button type="submit" class="icon-btn favorite-toggle {% if recipe['favorite'] %}is-active{% endif %}" aria-pressed="{{ 'true' if recipe['favorite'] else 'false' }}" aria-label="{{ 'Unfavorite' if recipe['favorite'] else 'Favorite' }}">
+          {{ icon('star-filled' if recipe['favorite'] else 'star', 22) }}
         </button>
       </form>
     </div>
@@ -30,27 +31,33 @@
   {% endif %}
 
   <div class="recipe-actions no-print">
-    <form method="post" action="{{ url_for('recipe.made', recipe_id=recipe['id']) }}" class="inline-form" data-confirm="Mark this recipe as made today?">
-      <button type="submit" class="btn">I made this</button>
-    </form>
-    <button type="button" class="btn" data-open-modal="note-modal">Add note</button>
-    <button type="button" class="btn" data-open-modal="image-modal">{{ 'Replace image' if recipe['image_filename'] else 'Add image' }}</button>
-    <button type="button" class="btn" onclick="window.print()">Print</button>
-    <a class="btn" href="{{ url_for('share.download_pdf', recipe_id=recipe['id']) }}">Save PDF</a>
-    {% if can_email %}
-    <button type="button" class="btn" data-open-modal="email-modal">Email</button>
-    {% endif %}
-    {% if can_text %}
-    <button type="button" class="btn" data-open-modal="text-modal">Text</button>
-    {% endif %}
-    {% if recipe['scan_filename'] %}
-    <button type="button" class="btn" data-open-modal="scan-modal">View original scan</button>
-    {% endif %}
+    <div class="action-group">
+      <form method="post" action="{{ url_for('recipe.made', recipe_id=recipe['id']) }}" class="inline-form" data-confirm="Mark this recipe as made today?">
+        <button type="submit" class="icon-btn" aria-label="I made this">{{ icon('check-calendar') }}</button>
+      </form>
+      <button type="button" class="icon-btn" data-open-modal="note-modal" aria-label="Add note">{{ icon('note') }}</button>
+      <button type="button" class="icon-btn" data-open-modal="image-modal" aria-label="{{ 'Replace image' if recipe['image_filename'] else 'Add image' }}">{{ icon('camera') }}</button>
+    </div>
+    <div class="action-group">
+      <button type="button" class="icon-btn" onclick="window.print()" aria-label="Print">{{ icon('printer') }}</button>
+      <a class="icon-btn" href="{{ url_for('share.download_pdf', recipe_id=recipe['id']) }}" aria-label="Save PDF">{{ icon('download') }}</a>
+      {% if can_email %}
+      <button type="button" class="icon-btn" data-open-modal="email-modal" aria-label="Email">{{ icon('mail') }}</button>
+      {% endif %}
+      {% if can_text %}
+      <button type="button" class="icon-btn" data-open-modal="text-modal" aria-label="Text">{{ icon('message') }}</button>
+      {% endif %}
+      {% if recipe['scan_filename'] %}
+      <button type="button" class="icon-btn" data-open-modal="scan-modal" aria-label="View original scan">{{ icon('image') }}</button>
+      {% endif %}
+    </div>
     {% if is_authenticated %}
-    <a class="btn" href="{{ url_for('edit.edit', recipe_id=recipe['id']) }}">Edit</a>
-    <form method="post" action="{{ url_for('edit.delete', recipe_id=recipe['id']) }}" class="inline-form" data-confirm="Delete this recipe permanently? This cannot be undone.">
-      <button type="submit" class="btn btn-danger">Delete</button>
-    </form>
+    <div class="action-group action-group--end">
+      <a class="icon-btn" href="{{ url_for('edit.edit', recipe_id=recipe['id']) }}" aria-label="Edit">{{ icon('pencil') }}</a>
+      <form method="post" action="{{ url_for('edit.delete', recipe_id=recipe['id']) }}" class="inline-form" data-confirm="Delete this recipe permanently? This cannot be undone.">
+        <button type="submit" class="icon-btn icon-btn--danger" aria-label="Delete recipe">{{ icon('trash') }}</button>
+      </form>
+    </div>
     {% endif %}
   </div>
 

@@ -1,0 +1,22 @@
+{% from "_icons.html" import icon %}
+
+{% macro recipe_card(r) %}
+<a class="recipe-card" href="{{ url_for('recipe.view', recipe_id=r['id']) }}">
+  {% if r['image_filename'] %}
+    <img class="recipe-card-thumb" src="{{ url_for('media.image', filename=thumb_filename(r['image_filename'])) }}" alt="">
+  {% else %}
+    <div class="recipe-card-thumb recipe-card-thumb--empty" aria-hidden="true">{{ icon('book', 28) }}</div>
+  {% endif %}
+  <div class="recipe-card-body">
+    <h3 class="recipe-card-title">
+      {{ r['title'] }}
+      {% if r['favorite'] %}<span class="badge-icon badge-icon--favorite" aria-label="Favorite">{{ icon('star-filled', 14) }}</span>{% endif %}
+    </h3>
+    <p class="recipe-card-meta">
+      {% if r['category_name'] %}<span>{{ r['category_name'] }}</span>{% endif %}
+      {% if r['last_made'] %}<span>Last made {{ r['last_made']|fmtdate }}</span>{% endif %}
+    </p>
+    {% if r['needs_review'] %}<span class="badge badge-review">Needs review</span>{% endif %}
+  </div>
+</a>
+{% endmacro %}
