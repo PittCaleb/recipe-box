@@ -5,24 +5,21 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}Recipes{% endblock %}</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+  <script src="{{ url_for('static', filename='js/menu.js') }}" defer></script>
   {% block head %}{% endblock %}
 </head>
 <body>
   <header class="site-header no-print">
-    <a class="site-title" href="{{ url_for('browse.index') }}">Recipes</a>
-    <nav class="site-nav">
-      {% if is_authenticated %}
-        <a class="header-link" href="{{ url_for('edit.new') }}">New recipe</a>
-        <a class="header-link" href="{{ url_for('admin.index') }}">Admin</a>
-        {% if login_required %}
-        <form method="post" action="{{ url_for('auth.logout') }}" class="inline-form">
-          <button type="submit" class="header-link header-link--button">Log out</button>
-        </form>
+    <div class="site-header-inner">
+      <a class="site-title" href="{{ url_for('browse.index') }}">Recipes</a>
+      <nav class="site-nav">
+        {% if is_authenticated %}
+          {% include "partials/_user_menu.html" %}
+        {% elif login_required %}
+          <a class="header-link" href="{{ url_for('auth.login') }}">Log in</a>
         {% endif %}
-      {% elif login_required %}
-        <a class="header-link" href="{{ url_for('auth.login') }}">Log in</a>
-      {% endif %}
-    </nav>
+      </nav>
+    </div>
   </header>
   <main class="site-main">
     {% with messages = get_flashed_messages() %}
