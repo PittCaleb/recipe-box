@@ -19,10 +19,12 @@ SORT_OPTIONS = {
     "name": "r.title COLLATE NOCASE ASC",
     "recent_made": "r.last_made IS NULL, r.last_made DESC",
     "recent_added": "r.created_at DESC",
+    "category": "c.id IS NULL, c.sort_order, c.name COLLATE NOCASE, r.title COLLATE NOCASE ASC",
 }
 
 
-def search_recipes(conn, q="", category_id=None, sort="name", needs_review=False, favorites=False):
+def search_recipes(conn, q="", category_id=None, sort="name", needs_review=False, favorites=False,
+                   rank_by_relevance=True):
     sort_sql = SORT_OPTIONS.get(sort, SORT_OPTIONS["name"])
     where = []
     params = []
@@ -57,12 +59,44 @@ def search_recipes(conn, q="", category_id=None, sort="name", needs_review=False
     if where:
         sql += " AND " + " AND ".join(where)
 
-    if match:
+    if match and rank_by_relevance:
         sql += f" ORDER BY bm25(recipes_fts, 10.0, 3.0, 3.0, 1.0), {sort_sql}"
     else:
         sql += f" ORDER BY {sort_sql}"
 
     return conn.execute(sql, params).fetchall()
+
+
+def group_recipes(rows, group_by):
+    """Splits already-sorted rows into (label, [rows]) sections. `group_by`
+    is "alpha" (rows must already be name-sorted) or "category" (rows must
+    already be category-then-name sorted); any other value returns a single
+    unlabeled section."""
+    if group_by not in ("alpha", "category"):
+        return [(None, rows)] if rows else []
+
+    sections = []
+    current_label = None
+    current_rows = []
+
+    for row in rows:
+        if group_by == "alpha":
+            first = (row["title"] or "").strip()[:1].upper()
+            label = first if first.isalpha() else "#"
+        else:
+            label = row["category_name"] or "Uncategorized"
+
+        if label != current_label:
+            if current_rows:
+                sections.append((current_label, current_rows))
+            current_label = label
+            current_rows = []
+        current_rows.append(row)
+
+    if current_rows:
+        sections.append((current_label, current_rows))
+
+    return sections
 
 
 def get_recipe(conn, recipe_id):

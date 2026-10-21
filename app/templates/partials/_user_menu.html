@@ -1,0 +1,30 @@
+{% from "_icons.html" import icon %}
+<div class="user-menu" data-user-menu>
+  <button type="button" class="user-menu-trigger" aria-haspopup="true" aria-expanded="false" aria-controls="user-menu-panel">
+    {{ icon('menu', 18) }}<span>Menu</span>
+  </button>
+  <div class="user-menu-panel" id="user-menu-panel" hidden>
+    <a class="user-menu-item" href="{{ url_for('edit.new') }}">{{ icon('plus', 18) }}<span>New recipe</span></a>
+    <a class="user-menu-item" href="{{ url_for('import_pdf.new') }}">{{ icon('upload', 18) }}<span>Import a PDF</span></a>
+    <a class="user-menu-item" href="{{ url_for('admin.cookbook') }}">{{ icon('book', 18) }}<span>Print cookbook</span></a>
+
+    <div class="user-menu-divider" role="separator"></div>
+
+    <button type="button" class="user-menu-item user-menu-item--expand" aria-expanded="false" aria-controls="admin-submenu">
+      {{ icon('folder', 18) }}<span>Admin</span><span class="user-menu-chevron">{{ icon('chevron-down', 16) }}</span>
+    </button>
+    <div class="user-menu-submenu" id="admin-submenu" hidden>
+      <a class="user-menu-item" href="{{ url_for('admin.index') }}"><span>Dashboard</span></a>
+      <a class="user-menu-item" href="{{ url_for('admin.categories') }}"><span>Categories</span></a>
+      <a class="user-menu-item" href="{{ url_for('admin.needs_review') }}"><span>Needs review</span></a>
+      <a class="user-menu-item" href="{{ url_for('admin.export') }}"><span>Export backup</span></a>
+    </div>
+
+    {% if login_required %}
+    <div class="user-menu-divider" role="separator"></div>
+    <form method="post" action="{{ url_for('auth.logout') }}">
+      <button type="submit" class="user-menu-item">{{ icon('log-out', 18) }}<span>Log out</span></button>
+    </form>
+    {% endif %}
+  </div>
+</div>
