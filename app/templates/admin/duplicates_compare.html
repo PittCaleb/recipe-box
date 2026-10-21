@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% block title %}Compare: {{ group_name }}{% endblock %}
+{% block content %}
+<div class="dup-header">
+  <div>
+    <a href="{{ url_for('duplicates.index') }}" class="hint">&larr; All duplicates ({{ remaining }} group{{ 's' if remaining != 1 }})</a>
+    <h1>{{ group_name }}</h1>
+    <p class="hint">Highlighted ingredient lines differ between copies.</p>
+  </div>
+  {% if next_ids %}
+  <a class="btn btn-secondary" href="{{ url_for('duplicates.compare', ids=next_ids) }}">Skip for now &rarr;</a>
+  {% endif %}
+</div>
+
+<form method="post" action="{{ url_for('duplicates.merge') }}" id="merge-form"
+      data-confirm="Merge into the selected recipe? The other checked copies will be deleted.">
+  <input type="hidden" name="ids" value="{{ ids }}">
+  <input type="hidden" name="group_name" value="{{ group_name }}">
+
+  <div class="dup-columns" style="--dup-cols: {{ recipes|length }}">
+    {% for r in recipes %}
+    <section class="dup-col {% if r.id == keep_id %}is-keeper{% endif %}" data-recipe-id="{{ r.id }}" data-clean-title="{{ r.clean_title }}">
+      <div class="dup-col-choice">
+        <label class="dup-keep">
+          <input type="radio" name="keep_id" value="{{ r.id }}" {% if r.id == keep_id %}checked{% endif %}>
+          <span>Keep this one</span>
+        </label>
+        <label class="dup-merge">
+          <input type="checkbox" name="merge_ids" value="{{ r.id }}" checked>
+          <span>Merge in &amp; delete</span>
+        </label>
+      </div>
+
+      <h2 class="dup-title"><a href="{{ url_for('recipe.view', recipe_id=r.id) }}" target="_blank" rel="noopener">{{ r.title }}</a></h2>
+      <dl class="dup-meta">
+        <dt>Category</dt><dd>{{ r.category_name or '—' }}</dd>
+        <dt>Contributor</dt><dd>{{ r.contributor or '—' }}</dd>
+        <dt>From</dt><dd>{% if r.source_pdf %}{{ r.source_pdf }} p{{ r.source_page }}{% else %}—{% endif %}</dd>
+        {% if r.favorite or r.last_made or r.rating %}
+        <dt>History</dt>
+        <dd>
+          {% if r.favorite %}Favorite{% endif %}
+          {% if r.last_made %}{{ ' · ' if r.favorite }}Made {{ r.last_made|fmtdate }}{% endif %}
+          {% if r.rating %} · {{ r.rating }}★{% endif %}
+        </dd>
+        {% endif %}
+      </dl>
+
+      {% if r.scan_filename %}
+      <a href="{{ url_for('media.scan', filename=r.scan_filename) }}" target="_blank" rel="noopener" class="dup-scan">
+        <img src="{{ url_for('media.scan', filename=r.scan_filename) }}" alt="Original scan of {{ r.title }}" loading="lazy">
+      </a>
+      {% endif %}
+
+      <h3 class="dup-section">Ingredients</h3>
+      {% if r.ingredient_rows %}
+      <ul class="dup-ingredients">
+        {% for i in r.ingredient_rows %}
+          {% if i.kind == 'heading' %}
+          <li class="dup-ing-heading">{{ i.text }}</li>
+          {% else %}
+          <li class="{% if i.differs %}differs{% endif %}">{{ i.text }}</li>
+          {% endif %}
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p class="empty-state">None</p>
+      {% endif %}
+
+      <h3 class="dup-section">Instructions</h3>
+      <div class="rich-text dup-instructions">{{ r.instructions_html|safe if r.instructions_html else '<p class="empty-state">None</p>'|safe }}</div>
+
+      {% if r.notes %}
+      <h3 class="dup-section">Notes</h3>
+      <ul class="dup-notes">
+        {% for n in r.notes %}<li>{{ n.body }}</li>{% endfor %}
+      </ul>
+      {% endif %}
+    </section>
+    {% endfor %}
+  </div>
+
+  <div class="dup-actions">
+    <div class="field dup-title-field">
+      <label for="merged-title">Title for the kept recipe</label>
+      <input type="text" id="merged-title" name="title" value="{{ (recipes|selectattr('id', 'equalto', keep_id)|first).clean_title }}" required>
+    </div>
+    <p class="hint">
+      Carried over to the kept recipe: notes, favorite, latest made date, highest rating, and the photo if it has none.
+      The importer's &ldquo;duplicate of&hellip;&rdquo; notes are dropped, and a note records where each merged copy came from.
+    </p>
+    <div class="dup-buttons">
+      <button type="submit" class="btn btn-primary">Merge</button>
+      <button type="submit" form="dismiss-form" class="btn btn-secondary">These aren't duplicates</button>
+    </div>
+  </div>
+</form>
+
+<form method="post" action="{{ url_for('duplicates.dismiss') }}" id="dismiss-form">
+  <input type="hidden" name="ids" value="{{ ids }}">
+  <input type="hidden" name="group_name" value="{{ group_name }}">
+</form>
+{% endblock %}
+{% block head %}
+<script src="{{ url_for('static', filename='js/duplicates.js') }}" defer></script>
+{% endblock %}
