@@ -18,6 +18,7 @@ def _search_params():
         "sort": request.args.get("sort", "name"),
         "needs_review": request.args.get("needs_review") == "1",
         "favorites": request.args.get("favorites") == "1",
+        "needs_split": request.args.get("needs_split") == "1",
         "display": display if display in VALID_DISPLAYS else "card",
         "group": group if group in VALID_GROUPS else "alpha",
     }
@@ -25,7 +26,7 @@ def _search_params():
 
 def _fetch_sections(db, params):
     search_kwargs = {
-        k: params[k] for k in ("q", "category_id", "sort", "needs_review", "favorites")
+        k: params[k] for k in ("q", "category_id", "sort", "needs_review", "favorites", "needs_split")
     }
 
     # Grouping needs rows already in section order, so it replaces relevance

@@ -1,3 +1,4 @@
+import importlib.util
 import sqlite3
 from datetime import datetime
 from pathlib import Path
@@ -22,7 +23,17 @@ def _applied_versions(conn):
 
 
 def _migration_files():
-    return sorted(MIGRATIONS_DIR.glob("*.sql"), key=lambda p: p.name)
+    # .py migrations are for data fixes SQL can't express; each defines
+    # migrate(conn) and must not commit (the runner does).
+    files = [*MIGRATIONS_DIR.glob("*.sql"), *MIGRATIONS_DIR.glob("[0-9]*.py")]
+    return sorted(files, key=lambda p: p.name)
+
+
+def _run_python_migration(conn, path):
+    spec = importlib.util.spec_from_file_location(f"migration_{path.stem}", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    module.migrate(conn)
 
 
 def run_migrations(db_path):
@@ -35,8 +46,10 @@ def run_migrations(db_path):
             version = int(path.name.split("_", 1)[0])
             if version in applied:
                 continue
-            sql = path.read_text()
-            conn.executescript(sql)
+            if path.suffix == ".py":
+                _run_python_migration(conn, path)
+            else:
+                conn.executescript(path.read_text())
             conn.execute(
                 "INSERT INTO schema_version (version, applied_at) VALUES (?, ?)",
                 (version, datetime.now().isoformat(timespec="seconds")),

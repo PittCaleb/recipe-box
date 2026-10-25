@@ -1,6 +1,25 @@
 import re
 from datetime import date
 
+from app.ingredients.parser import parse_ingredient
+from app.ingredients.scaling import format_ingredient_line
+
+
+def split_guess(raw_text):
+    """The parser's split for an unsplit line, or None if it has no amount
+    to split out ("salt to taste"). A line with a guess still needs splitting."""
+    parsed = parse_ingredient(raw_text)
+    if parsed["quantity"] is None or not parsed["item"]:
+        return None
+    return parsed
+
+
+def needs_split_ids(conn):
+    rows = conn.execute(
+        "SELECT recipe_id, raw_text FROM ingredients WHERE kind = 'item' AND is_split = 0"
+    ).fetchall()
+    return {r["recipe_id"] for r in rows if split_guess(r["raw_text"])}
+
 
 def list_categories(conn):
     return conn.execute(
@@ -24,7 +43,7 @@ SORT_OPTIONS = {
 
 
 def search_recipes(conn, q="", category_id=None, sort="name", needs_review=False, favorites=False,
-                   rank_by_relevance=True):
+                   needs_split=False, rank_by_relevance=True):
     sort_sql = SORT_OPTIONS.get(sort, SORT_OPTIONS["name"])
     where = []
     params = []
@@ -54,6 +73,10 @@ def search_recipes(conn, q="", category_id=None, sort="name", needs_review=False
         where.append("r.needs_review = 1")
     if favorites:
         where.append("r.favorite = 1")
+    if needs_split:
+        ids = sorted(needs_split_ids(conn))
+        where.append(f"r.id IN ({','.join('?' * len(ids))})" if ids else "0")
+        params.extend(ids)
 
     sql = base
     if where:
@@ -201,6 +224,18 @@ def _category_name(conn, category_id):
     return row["name"] if row else ""
 
 
+def normalize_ingredient(ing):
+    """Split fields are the source of truth: a split row's text is always
+    rebuilt from them, so the two can never disagree."""
+    ing = dict(ing)
+    ing["unit"] = ing.get("unit") or None
+    if ing.get("kind") == "item" and ing.get("is_split") and ing.get("quantity") is not None:
+        ing["raw_text"] = format_ingredient_line(
+            ing["quantity"], ing.get("quantity_max"), ing["unit"], ing.get("item"),
+        )
+    return ing
+
+
 def save_recipe(conn, recipe_id, fields, ingredients):
     """Create (recipe_id is None) or update a recipe plus its full ingredient list,
     in one transaction. `ingredients` is a list of dicts with keys matching the
@@ -244,6 +279,7 @@ def save_recipe(conn, recipe_id, fields, ingredients):
             conn.execute("DELETE FROM ingredients WHERE recipe_id = ?", (recipe_id,))
 
         for pos, ing in enumerate(ingredients):
+            ing = normalize_ingredient(ing)
             conn.execute(
                 """INSERT INTO ingredients
                    (recipe_id, position, kind, raw_text, is_split, quantity, quantity_max,

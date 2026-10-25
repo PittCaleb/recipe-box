@@ -68,11 +68,25 @@
             <li class="ingredient-heading" data-ing-index="{{ loop.index0 }}">{{ ing['raw_text'] }}</li>
           {% else %}
             <li class="ingredient-item" data-ing-index="{{ loop.index0 }}">
-              <span class="ingredient-item-text">{{ ing['raw_text'] }}</span>{% if ing['no_scale'] %} <span class="hint">(not scaled)</span>{% endif %}
+              <span class="ingredient-item-main">
+                <span class="ingredient-item-text">{{ ing['raw_text'] }}</span>{% if ing['no_scale'] and ing['is_split'] %} <span class="hint">(not scaled)</span>{% endif %}
+              </span>
+              {% if shoppable[loop.index0] %}
+              <button type="button" class="icon-btn icon-btn--sm shop-btn no-print" data-shop-index="{{ loop.index0 }}" aria-label="Add to shopping list">{{ icon('cart-plus', 17) }}</button>
+              {% endif %}
             </li>
           {% endif %}
         {% endfor %}
       </ul>
+
+      {% if shoppable|select|list %}
+      <div class="shop-all no-print">
+        <button type="button" class="btn shop-all-btn" id="shop-all-btn">{{ icon('cart-plus', 18) }}<span>Add all to shopping list</span></button>
+        <button type="button" class="icon-btn" id="shop-copy-btn" aria-label="Copy shopping list as text">{{ icon('copy') }}</button>
+        <a class="icon-btn" href="{{ url_for('help.shopping_list') }}" aria-label="How the shopping list works">{{ icon('help') }}</a>
+      </div>
+      <script type="application/json" id="shopping-data">{{ shopping|tojson }}</script>
+      {% endif %}
 
       {% if scaled_variants %}
       <div class="adjust-panel no-print" id="adjust-panel" data-default-index="{{ default_index }}">
@@ -149,6 +163,26 @@
 </div>
 
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<div class="modal" id="shop-setup-modal" hidden>
+  <div class="modal-backdrop" data-close-modal></div>
+  <div class="modal-content">
+    <button type="button" class="modal-close" data-close-modal aria-label="Close">&times;</button>
+    <h2>Send to your shopping list</h2>
+    <p>
+      This button hands the items to an Apple Shortcut named
+      <strong>&ldquo;{{ shopping.shortcut if shopping else 'Add to Shopping List' }}&rdquo;</strong>, which adds them to your
+      Reminders shopping list. It needs to be set up once on each iPhone, iPad, or Mac &mdash;
+      it takes about two minutes.
+    </p>
+    <p><a href="{{ url_for('help.shopping_list') }}" target="_blank" rel="noopener">Step-by-step setup instructions</a></p>
+    <p class="hint">No Shortcut, or not on an Apple device? Copy the items instead and paste them anywhere.</p>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-secondary" id="shop-setup-copy">Copy instead</button>
+      <button type="button" class="btn btn-primary" id="shop-setup-go">It&rsquo;s set up &mdash; send</button>
+    </div>
+  </div>
+</div>
 
 <div class="modal" id="note-modal" hidden>
   <div class="modal-backdrop" data-close-modal></div>
