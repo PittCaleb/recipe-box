@@ -51,6 +51,10 @@
       <input type="checkbox" name="needs_review" value="1" {% if params.needs_review %}checked{% endif %}>
       Needs review
     </label>
+    <label class="toggle-chip" title="Recipes with ingredient lines not yet split into amount / unit / ingredient">
+      <input type="checkbox" name="needs_split" value="1" {% if params.needs_split %}checked{% endif %}>
+      Needs split
+    </label>
     <label class="toggle-chip">
       <input type="checkbox" name="favorites" value="1" {% if params.favorites %}checked{% endif %}>
       Favorites

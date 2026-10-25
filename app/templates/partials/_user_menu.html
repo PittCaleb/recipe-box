@@ -21,6 +21,9 @@
       <a class="user-menu-item" href="{{ url_for('admin.export') }}"><span>Export backup</span></a>
     </div>
 
+    <div class="user-menu-divider" role="separator"></div>
+    <a class="user-menu-item" href="{{ url_for('help.shopping_list') }}">{{ icon('help', 18) }}<span>Help: shopping list</span></a>
+
     {% if login_required %}
     <div class="user-menu-divider" role="separator"></div>
     <form method="post" action="{{ url_for('auth.logout') }}">

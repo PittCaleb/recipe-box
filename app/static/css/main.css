@@ -789,8 +789,75 @@ button {
   font-size: 1.1rem;
 }
 .ingredient-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
   padding: 0.45rem 0;
   border-bottom: 1px solid var(--color-border);
+}
+.ingredient-item-main {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Kept faint so a long ingredient list doesn't read as a column of buttons;
+   brightens on the row the pointer is over. */
+.icon-btn--sm {
+  width: 34px;
+  height: 34px;
+  min-height: 34px;
+  flex-shrink: 0;
+  margin: -0.3rem -0.3rem -0.3rem 0;
+}
+.shop-btn {
+  color: var(--color-border-strong);
+}
+.ingredient-item:hover .shop-btn {
+  color: var(--color-text-muted);
+}
+.shop-btn:hover,
+.shop-btn:focus-visible {
+  color: var(--color-accent);
+  background: var(--color-accent-soft);
+}
+@media (hover: none) {
+  .shop-btn {
+    color: var(--color-text-faint);
+  }
+}
+
+.shop-all {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-top: 0.9rem;
+}
+.shop-all-btn {
+  margin-right: 0.25rem;
+}
+.shop-all-btn svg {
+  color: var(--color-accent);
+}
+
+.help-page {
+  max-width: 720px;
+}
+.help-page h2 {
+  margin-top: 2rem;
+}
+.help-page svg {
+  vertical-align: -3px;
+  color: var(--color-accent);
+}
+.help-steps li {
+  margin-bottom: 0.55rem;
+}
+.help-page code {
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+  background: var(--color-accent-soft);
+  font-size: 0.95em;
 }
 .ingredient-heading {
   font-family: var(--font-serif);
@@ -1035,49 +1102,123 @@ button {
   border-radius: var(--radius-sm);
 }
 
+/* Ingredient editor: one grid row per ingredient, the same columns as the
+   header above it. Headings span the amount/unit/ingredient columns. */
 .ingredient-rows {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.4rem;
   margin-bottom: 0.75rem;
 }
+.ing-header,
 .ingredient-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: 64px 70px 60px 92px minmax(0, 1fr) auto;
+  grid-template-areas: "move qty max unit item actions" "note note note note note note";
+  column-gap: 0.4rem;
   align-items: center;
-  gap: 0.5rem;
+}
+.ing-header {
+  grid-template-areas: "move qty max unit item actions";
+  padding: 0 0.4rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted);
+}
+.ing-header span:nth-child(1) { grid-area: move; }
+.ing-header span:nth-child(2) { grid-area: qty; }
+.ing-header span:nth-child(3) { grid-area: max; }
+.ing-header span:nth-child(4) { grid-area: unit; }
+.ing-header span:nth-child(5) { grid-area: item; }
+.ing-header span:nth-child(6) { grid-area: actions; width: 108px; }
+.ingredient-row {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
-  padding: 0.4rem;
-  flex-wrap: wrap;
+  padding: 0.35rem 0.4rem;
 }
-.ingredient-row[data-kind="heading"] .ingredient-text {
-  font-weight: 700;
+.ingredient-row.is-guess {
+  border-color: #e9c46a;
+  background: #fffaf0;
 }
-.ingredient-row-controls {
-  display: flex;
-  gap: 0.25rem;
-}
-.ingredient-text-wrap {
-  flex: 1 1 200px;
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-.ingredient-text {
-  min-height: 44px;
-  padding: 0 0.6rem;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-}
-.split-chip {
-  display: inline-block;
-  align-self: flex-start;
+.ing-move { grid-area: move; display: flex; gap: 2px; }
+.ing-move .row-btn { min-width: 30px; min-height: 36px; padding: 0; }
+.ing-qty { grid-area: qty; }
+.ing-range { grid-area: max; }
+.ing-range-add {
+  width: 100%;
+  min-height: 38px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--color-text-faint);
   font-size: 0.78rem;
+  white-space: nowrap;
+}
+.ing-range-add:hover,
+.ing-range-add:focus-visible {
+  color: var(--color-accent);
+}
+.ing-unit { grid-area: unit; }
+.ing-item { grid-area: item; }
+.ing-heading { grid-area: qty / qty / qty / item; grid-column: qty-start / item-end; font-weight: 700; }
+.ing-actions { grid-area: actions; display: flex; }
+.ing-guess-note {
+  grid-area: note;
+  margin: 0.2rem 0 0;
+  font-size: 0.8rem;
+  color: #8a6a12;
+}
+.ingredient-row input[type=text],
+.ingredient-row select {
+  width: 100%;
+  min-height: 38px;
+  padding: 0 0.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-surface);
+}
+.ingredient-row[data-kind="item"] .ing-heading,
+.ingredient-row[data-kind="heading"] .ing-qty,
+.ingredient-row[data-kind="heading"] .ing-range,
+.ingredient-row[data-kind="heading"] .ing-unit,
+.ingredient-row[data-kind="heading"] .ing-item,
+.ingredient-row[data-kind="heading"] .ing-scale-toggle {
+  display: none;
+}
+.ingredient-row[data-kind="heading"] {
+  background: var(--color-surface-2);
+}
+.ing-scale-toggle.is-on {
   color: var(--color-accent);
   background: var(--color-accent-soft);
-  border-radius: 999px;
-  padding: 0.15rem 0.6rem;
+}
+.ing-guess-banner {
+  margin: 0 0 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-sm);
+  background: #fffaf0;
+  border: 1px solid #e9c46a;
+  font-size: 0.88rem;
+}
+.ing-add-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+@media (max-width: 640px) {
+  .ing-header { display: none; }
+  .ingredient-row {
+    grid-template-columns: 64px 1fr 1fr 1.3fr;
+    grid-template-areas:
+      "move item item item"
+      "actions qty max unit"
+      "note note note note";
+    row-gap: 0.35rem;
+  }
+  .ing-heading { grid-column: 2 / -1; grid-row: 1; }
+  .ing-actions { justify-content: flex-start; }
 }
 .row-btn {
   font-size: 1rem;
