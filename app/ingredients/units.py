@@ -81,6 +81,11 @@ def _round_count(value):
     return rounded, is_approx
 
 
+def rounded_count(value):
+    """The amount a plain count actually displays as, after rounding."""
+    return round(_round_count(value)[0], 4)
+
+
 def format_count(value):
     """Plain count items (eggs, candy kisses, ...): round to the nearest ½ or
     ¼, prefixing "about" when that rounding changes the value by more than
@@ -91,7 +96,8 @@ def format_count(value):
 
 
 def format_pinch_dash(value, unit):
-    whole = round(value)
+    # A pinch can't be split; scaling down still leaves one.
+    whole = max(1, round(value))
     label = unit_label(unit, whole)
     return f"{whole} {label}"
 
@@ -211,7 +217,9 @@ def format_scaled_range(low, high, unit):
         return f"{format_quantity(lo_r)}–{format_quantity(hi_r)}"
 
     if unit in NO_CONVERT_UNITS:
-        lo_w, hi_w = round(low), round(high)
+        lo_w, hi_w = max(1, round(low)), max(1, round(high))
+        if lo_w == hi_w:
+            return f"{lo_w} {unit_label(unit, hi_w)}"
         return f"{lo_w}–{hi_w} {unit_label(unit, hi_w)}"
 
     if unit in COUNT_LIKE_UNITS:

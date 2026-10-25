@@ -1,34 +1,20 @@
 from tests.conftest import seed_ingredient, seed_recipe, sync_fts
 
 
-def test_parse_ingredient_endpoint(client):
-    resp = client.get("/recipes/parse-ingredient?text=1 1/2 cups sugar")
-    assert resp.status_code == 200
-    data = resp.get_json()
-    assert data["quantity"] == 1.5
-    assert data["unit"] == "cup"
-    assert data["item"] == "sugar"
+def _form(rows, title="Splittable"):
+    """Editor form data. rows: (kind, heading, qty, max, unit, item, no_scale)."""
+    data = {"title": title, "instructions_html": "<p>x</p>"}
+    keys = ["ingredient_kind", "ingredient_heading", "ingredient_quantity",
+            "ingredient_quantity_max", "ingredient_unit", "ingredient_item", "ingredient_no_scale"]
+    for i, key in enumerate(keys):
+        data[key] = [r[i] for r in rows]
+    return data
 
 
 def test_update_recipe_saves_split_fields(client, db):
     rid = seed_recipe(db, title="Splittable")
     sync_fts(db, rid, "Splittable")
-
-    client.post(
-        f"/recipes/{rid}",
-        data={
-            "title": "Splittable",
-            "instructions_html": "<p>x</p>",
-            "ingredient_kind": ["item"],
-            "ingredient_text": ["2 cups flour"],
-            "ingredient_no_scale": ["0"],
-            "ingredient_is_split": ["1"],
-            "ingredient_quantity": ["2"],
-            "ingredient_quantity_max": [""],
-            "ingredient_unit": ["cup"],
-            "ingredient_item": ["flour"],
-        },
-    )
+    client.post(f"/recipes/{rid}", data=_form([("item", "", "2", "", "cup", "flour", "0")]))
     ing = db.execute("SELECT * FROM ingredients WHERE recipe_id=?", (rid,)).fetchone()
     assert ing["is_split"] == 1
     assert ing["quantity"] == 2.0
@@ -40,21 +26,7 @@ def test_update_recipe_saves_split_fields(client, db):
 def test_recipe_becomes_scalable_once_split(client, db):
     rid = seed_recipe(db, title="Scale Candidate")
     sync_fts(db, rid, "Scale Candidate")
-    client.post(
-        f"/recipes/{rid}",
-        data={
-            "title": "Scale Candidate",
-            "instructions_html": "<p>x</p>",
-            "ingredient_kind": ["item"],
-            "ingredient_text": ["2 cups flour"],
-            "ingredient_no_scale": ["0"],
-            "ingredient_is_split": ["1"],
-            "ingredient_quantity": ["2"],
-            "ingredient_quantity_max": [""],
-            "ingredient_unit": ["cup"],
-            "ingredient_item": ["flour"],
-        },
-    )
+    client.post(f"/recipes/{rid}", data=_form([("item", "", "2", "", "cup", "flour", "0")], "Scale Candidate"))
     resp = client.get(f"/recipes/{rid}")
     assert b"adjust-panel" in resp.data
     assert b"adjust-slider" in resp.data

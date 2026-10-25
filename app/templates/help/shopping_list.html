@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% block title %}Shopping list setup{% endblock %}
+{% block content %}
+<article class="help-page">
+  <h1>Sending ingredients to your shopping list</h1>
+  <p>
+    On a recipe, the {{ icon('cart-plus', 16) }} button next to an ingredient adds that one item, and
+    <strong>Add all to shopping list</strong> adds everything (combining repeats, like butter used in two places).
+    Items arrive as <em>Heavy whipping cream (2 cups)</em> &mdash; the name first, the amount in parentheses,
+    matching whatever the scale slider is set to. Lines with no amount, like &ldquo;salt to taste,&rdquo; are left out.
+  </p>
+  <p>
+    The app hands the items to an Apple Shortcut on your own device, which adds them to Reminders.
+    Set it up once on each iPhone, iPad, or Mac you use.
+  </p>
+
+  <h2>Set up the Shortcut</h2>
+  <ol class="help-steps">
+    <li>Open the <strong>Shortcuts</strong> app and tap <strong>+</strong> to make a new shortcut.</li>
+    <li>Name it exactly <code>{{ shortcut_name }}</code> (tap the name at the top, then <strong>Rename</strong>).</li>
+    <li>Add the <strong>Split Text</strong> action. Tap its text field and choose <strong>Shortcut Input</strong>,
+      and make sure it splits by <strong>New Lines</strong>.</li>
+    <li>If a line appears at the top saying it receives input from <em>Nowhere</em>, tap it and choose
+      <strong>Share Sheet</strong> so the shortcut can accept text.</li>
+    <li>Add <strong>Repeat with Each</strong>, set to repeat with each item in <strong>Split Text</strong>.</li>
+    <li>Inside the repeat, add <strong>Add New Reminder</strong>. Set the reminder text to <strong>Repeat Item</strong>
+      &mdash; <em>not</em> Split Text, which would add the whole list as one reminder &mdash; and the list to your
+      shopping list (for example <em>Groceries</em>). It should read
+      <strong>Add <code>Repeat Item</code> to <em>your list</em></strong>.</li>
+    <li>Tap <strong>Done</strong>.</li>
+  </ol>
+  <p class="hint">
+    Menu names shift a little between iOS and macOS versions, but those are the four pieces:
+    take the input, split it into lines, and add a reminder for each line.
+  </p>
+
+  <h2>Try it</h2>
+  <p>
+    Open any recipe and tap {{ icon('cart-plus', 16) }} next to one ingredient. The first time, the app asks whether
+    the Shortcut is set up &mdash; choose <strong>It&rsquo;s set up &mdash; send</strong>. On iPhone and iPad you&rsquo;ll
+    be bounced to Shortcuts and straight back here; on a Mac it runs in the background. Check Reminders for the item.
+  </p>
+  <p>
+    If nothing shows up, open the Shortcut and check its name matches <code>{{ shortcut_name }}</code> exactly.
+  </p>
+
+  <h2>Sharing it with the family</h2>
+  <p>
+    Shortcuts you make sync to your other Apple devices through iCloud. To give it to someone else, open the
+    shortcut&rsquo;s menu, choose <strong>Share</strong> &rarr; <strong>Copy iCloud Link</strong>, and send them the link.
+    If your shopping list is a shared Reminders list, everyone&rsquo;s additions land in the same place.
+  </p>
+
+  <h2>No Shortcut, or not on an Apple device?</h2>
+  <p>
+    Use the {{ icon('copy', 16) }} button next to <strong>Add all to shopping list</strong> to copy the list as text,
+    one item per line, and paste it into any notes or list app.
+  </p>
+</article>
+{% endblock %}

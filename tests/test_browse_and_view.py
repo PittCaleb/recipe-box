@@ -249,3 +249,29 @@ def test_user_menu_links_present(client, db):
     for path in (b"/recipes/new", b"/admin/import/", b"/admin/cookbook", b"/admin/categories",
                  b"/admin/needs-review", b"/admin/export"):
         assert path in resp.data
+
+
+def test_needs_split_filter(client, db):
+    unsplit = _make_recipe(db, title="Old Card")
+    seed_ingredient(db, unsplit, 0, "1 1/2 c. sugar")
+    done = _make_recipe(db, title="All Split")
+    seed_ingredient(db, done, 0, "2 cups flour", is_split=1, quantity=2, unit="cup", item="flour")
+    seed_ingredient(db, done, 1, "salt to taste", no_scale=1)
+    seed_ingredient(db, done, 2, "For the glaze", kind="heading")
+    _make_recipe(db, title="No Ingredients")
+
+    resp = client.get("/api/search?needs_split=1")
+    assert b"Old Card" in resp.data
+    assert b"All Split" not in resp.data
+    assert b"No Ingredients" not in resp.data
+    assert b"Showing 1 of 3 recipes" in resp.data
+
+    assert b"Old Card" in client.get("/api/search?needs_split=1&q=old").data
+    assert b"Old Card" not in client.get("/api/search?needs_split=1&q=split").data
+    assert b'name="needs_split"' in client.get("/").data
+
+
+def test_needs_split_filter_empty_when_everything_is_split(client, db):
+    rid = _make_recipe(db, title="Tidy")
+    seed_ingredient(db, rid, 0, "2 cups flour", is_split=1, quantity=2, unit="cup", item="flour")
+    assert b"Showing 0 of 1 recipes" in client.get("/api/search?needs_split=1").data

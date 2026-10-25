@@ -193,3 +193,11 @@ def test_raw_text_never_mutated():
     raw = "1 1/2 cups sugar"
     parse_ingredient(raw)
     assert raw == "1 1/2 cups sugar"
+
+
+def test_hyphenated_mixed_number_is_not_a_range():
+    from app.ingredients.parser import parse_ingredient
+    p = parse_ingredient("1-1/2 cups all-purpose flour")
+    assert (p["quantity"], p["quantity_max"], p["unit"], p["item"]) == (1.5, None, "cup", "all-purpose flour")
+    r = parse_ingredient("2-3 cups water")
+    assert (r["quantity"], r["quantity_max"]) == (2, 3)

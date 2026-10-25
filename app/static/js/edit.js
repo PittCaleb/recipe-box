@@ -1,186 +1,102 @@
 (function () {
   const rowsContainer = document.getElementById("ingredient-rows");
-  const addRowBtn = document.getElementById("add-ingredient-row");
+  const rowTemplate = document.getElementById("ingredient-row-template");
   const form = document.getElementById("edit-form");
   const quillEl = document.getElementById("quill-editor");
   const instructionsInput = document.getElementById("instructions_html");
-  const parseUrl = rowsContainer ? rowsContainer.dataset.parseUrl : null;
 
-  function rowTemplate() {
-    const row = document.createElement("div");
-    row.className = "ingredient-row";
-    row.dataset.kind = "item";
-    row.innerHTML = `
-      <div class="ingredient-row-controls">
-        <button type="button" class="icon-button row-btn" data-move="up" title="Move up" aria-label="Move up">&uarr;</button>
-        <button type="button" class="icon-button row-btn" data-move="down" title="Move down" aria-label="Move down">&darr;</button>
-      </div>
-      <div class="ingredient-text-wrap">
-        <input type="hidden" name="ingredient_kind" value="item">
-        <input type="text" name="ingredient_text" value="" class="ingredient-text" placeholder="e.g. 2 cups flour, or a heading">
-        <span class="split-chip" hidden></span>
-      </div>
-      <input type="hidden" name="ingredient_no_scale" value="0">
-      <input type="hidden" name="ingredient_is_split" value="0">
-      <input type="hidden" name="ingredient_quantity" value="">
-      <input type="hidden" name="ingredient_quantity_max" value="">
-      <input type="hidden" name="ingredient_unit" value="">
-      <input type="hidden" name="ingredient_item" value="">
-      <div class="ingredient-row-controls">
-        <button type="button" class="chip-toggle-btn" data-toggle="heading">Heading</button>
-        <button type="button" class="chip-toggle-btn" data-toggle="no_scale">Scale: on</button>
-        <button type="button" class="chip-toggle-btn" data-action="split">Split</button>
-        <button type="button" class="icon-button row-btn row-btn--danger" data-remove title="Delete row" aria-label="Delete row">&times;</button>
-      </div>
-    `;
-    return row;
+  function field(row, name) {
+    return row.querySelector(`[name=${name}]`);
   }
 
-  if (addRowBtn && rowsContainer) {
-    addRowBtn.addEventListener("click", () => {
-      const row = rowTemplate();
-      rowsContainer.appendChild(row);
-      row.querySelector(".ingredient-text").focus();
+  function setKind(row, kind) {
+    row.dataset.kind = kind;
+    field(row, "ingredient_kind").value = kind;
+    row.querySelector("[data-toggle='heading']").setAttribute(
+      "aria-label", kind === "heading" ? "Make it an ingredient" : "Make it a heading",
+    );
+  }
+
+  function addRow(kind) {
+    const row = rowTemplate.content.firstElementChild.cloneNode(true);
+    setKind(row, kind);
+    rowsContainer.appendChild(row);
+    row.querySelector(kind === "heading" ? ".ing-heading" : ".ing-qty").focus();
+  }
+
+  const addItemBtn = document.getElementById("add-ingredient-row");
+  const addHeadingBtn = document.getElementById("add-heading-row");
+  if (rowsContainer && rowTemplate) {
+    if (addItemBtn) addItemBtn.addEventListener("click", () => addRow("item"));
+    if (addHeadingBtn) addHeadingBtn.addEventListener("click", () => addRow("heading"));
+
+    // Enter in the last field of a row starts a new ingredient instead of
+    // submitting the whole form.
+    rowsContainer.addEventListener("keydown", (e) => {
+      if (e.key !== "Enter" || e.target.tagName !== "INPUT") return;
+      e.preventDefault();
+      const row = e.target.closest(".ingredient-row");
+      if (row && row === rowsContainer.lastElementChild) addRow("item");
     });
-  }
 
-  // --- Split modal ---
-  const splitModal = document.getElementById("split-modal");
-  const splitRawText = document.getElementById("split-modal-raw-text");
-  const splitQuantity = document.getElementById("split-quantity");
-  const splitQuantityMax = document.getElementById("split-quantity-max");
-  const splitUnit = document.getElementById("split-unit");
-  const splitItem = document.getElementById("split-item");
-  const splitSaveBtn = document.getElementById("split-save");
-  const splitClearBtn = document.getElementById("split-clear");
-  let activeRow = null;
-
-  function rowField(row, name) {
-    return row.querySelector(`input[name=${name}]`);
-  }
-
-  function updateChip(row) {
-    const isSplit = rowField(row, "ingredient_is_split").value === "1";
-    const chip = row.querySelector(".split-chip");
-    if (!isSplit) {
-      chip.hidden = true;
-      return;
-    }
-    const qty = rowField(row, "ingredient_quantity").value;
-    const qtyMax = rowField(row, "ingredient_quantity_max").value;
-    const unit = rowField(row, "ingredient_unit").value || "count";
-    const item = rowField(row, "ingredient_item").value;
-    chip.textContent = `${qty}${qtyMax ? "–" + qtyMax : ""} · ${unit} · ${item}`;
-    chip.hidden = false;
-  }
-
-  function openSplitModal(row) {
-    activeRow = row;
-    const text = row.querySelector(".ingredient-text").value;
-    splitRawText.textContent = `Raw text: "${text}"`;
-
-    const isSplit = rowField(row, "ingredient_is_split").value === "1";
-    if (isSplit) {
-      splitQuantity.value = rowField(row, "ingredient_quantity").value;
-      splitQuantityMax.value = rowField(row, "ingredient_quantity_max").value;
-      splitUnit.value = rowField(row, "ingredient_unit").value;
-      splitItem.value = rowField(row, "ingredient_item").value;
-      splitModal.hidden = false;
-    } else if (parseUrl) {
-      fetch(`${parseUrl}?text=${encodeURIComponent(text)}`)
-        .then((res) => res.json())
-        .then((data) => {
-          splitQuantity.value = data.quantity != null ? data.quantity : "";
-          splitQuantityMax.value = data.quantity_max != null ? data.quantity_max : "";
-          splitUnit.value = data.unit || "";
-          splitItem.value = data.item || "";
-          splitModal.hidden = false;
-        })
-        .catch(() => {
-          splitQuantity.value = "";
-          splitQuantityMax.value = "";
-          splitUnit.value = "";
-          splitItem.value = "";
-          splitModal.hidden = false;
-        });
-    } else {
-      splitModal.hidden = false;
-    }
-  }
-
-  if (splitSaveBtn) {
-    splitSaveBtn.addEventListener("click", () => {
-      if (!activeRow) return;
-      const qty = splitQuantity.value.trim();
-      if (!qty) {
-        window.alert("Enter a quantity, or use Clear split for items with no amount.");
-        return;
-      }
-      rowField(activeRow, "ingredient_is_split").value = "1";
-      rowField(activeRow, "ingredient_quantity").value = qty;
-      rowField(activeRow, "ingredient_quantity_max").value = splitQuantityMax.value.trim();
-      rowField(activeRow, "ingredient_unit").value = splitUnit.value;
-      rowField(activeRow, "ingredient_item").value = splitItem.value.trim();
-      updateChip(activeRow);
-      splitModal.hidden = true;
+    // An emptied range field folds back into the "+ range" link.
+    rowsContainer.addEventListener("focusout", (e) => {
+      if (!e.target.matches("[name=ingredient_quantity_max]") || e.target.value.trim()) return;
+      e.target.hidden = true;
+      e.target.closest(".ing-range").querySelector("[data-range-add]").hidden = false;
     });
-  }
 
-  if (splitClearBtn) {
-    splitClearBtn.addEventListener("click", () => {
-      if (!activeRow) return;
-      rowField(activeRow, "ingredient_is_split").value = "0";
-      rowField(activeRow, "ingredient_quantity").value = "";
-      rowField(activeRow, "ingredient_quantity_max").value = "";
-      rowField(activeRow, "ingredient_unit").value = "";
-      rowField(activeRow, "ingredient_item").value = "";
-      updateChip(activeRow);
-      splitModal.hidden = true;
+    // Editing a pre-filled guess counts as checking it.
+    rowsContainer.addEventListener("input", (e) => {
+      const row = e.target.closest(".ingredient-row.is-guess");
+      if (row) row.classList.remove("is-guess");
     });
-  }
 
-  if (rowsContainer) {
     rowsContainer.addEventListener("click", (e) => {
       const row = e.target.closest(".ingredient-row");
       if (!row) return;
+
+      const rangeAdd = e.target.closest("[data-range-add]");
+      if (rangeAdd) {
+        const input = field(row, "ingredient_quantity_max");
+        rangeAdd.hidden = true;
+        input.hidden = false;
+        input.focus();
+        return;
+      }
 
       if (e.target.closest("[data-remove]")) {
         row.remove();
         return;
       }
-
       if (e.target.closest("[data-move='up']")) {
         const prev = row.previousElementSibling;
         if (prev) rowsContainer.insertBefore(row, prev);
         return;
       }
-
       if (e.target.closest("[data-move='down']")) {
         const next = row.nextElementSibling;
         if (next) rowsContainer.insertBefore(next, row);
         return;
       }
 
-      if (e.target.closest("[data-action='split']")) {
-        openSplitModal(row);
-        return;
-      }
-
       const toggleBtn = e.target.closest("[data-toggle]");
-      if (toggleBtn) {
-        const toggleType = toggleBtn.dataset.toggle;
-        if (toggleType === "heading") {
-          const kindInput = row.querySelector("input[name=ingredient_kind]");
-          const isHeading = kindInput.value === "heading";
-          kindInput.value = isHeading ? "item" : "heading";
-          row.dataset.kind = kindInput.value;
-          toggleBtn.textContent = isHeading ? "Heading" : "Item";
-        } else if (toggleType === "no_scale") {
-          const noScaleInput = row.querySelector("input[name=ingredient_no_scale]");
-          const isNoScale = noScaleInput.value === "1";
-          noScaleInput.value = isNoScale ? "0" : "1";
-          toggleBtn.textContent = isNoScale ? "Scale: on" : "Don't scale";
-        }
+      if (!toggleBtn) return;
+      if (toggleBtn.dataset.toggle === "heading") {
+        const toHeading = row.dataset.kind !== "heading";
+        const heading = field(row, "ingredient_heading");
+        const item = field(row, "ingredient_item");
+        // Carry the text across so switching doesn't lose what was typed.
+        if (toHeading && !heading.value) heading.value = item.value;
+        if (!toHeading && !item.value) item.value = heading.value;
+        setKind(row, toHeading ? "heading" : "item");
+        row.classList.remove("is-guess");
+      } else if (toggleBtn.dataset.toggle === "no_scale") {
+        const input = field(row, "ingredient_no_scale");
+        const on = input.value !== "1";
+        input.value = on ? "1" : "0";
+        toggleBtn.classList.toggle("is-on", on);
+        toggleBtn.setAttribute("aria-pressed", on ? "true" : "false");
       }
     });
   }
