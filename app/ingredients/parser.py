@@ -129,6 +129,21 @@ def _take_unit(text):
 _PAREN_RE = re.compile(r"\(([^)]*)\)")
 
 
+def parse_amount(text):
+    """A typed amount ("2", "1 1/2", "1½", "¾", "0.5") as a number, or None
+    if it's blank or isn't purely a number."""
+    text = (text or "").strip()
+    if not text:
+        return None
+    try:
+        value, rest = _take_leading_number(text)
+    except ZeroDivisionError:
+        return None
+    if value is None or rest.strip() or value <= 0:
+        return None
+    return float(value)
+
+
 def parse_ingredient(raw_text):
     """Returns {"quantity", "quantity_max", "unit", "item"}.
 
@@ -142,6 +157,9 @@ def parse_ingredient(raw_text):
         return {"quantity": None, "quantity_max": None, "unit": None, "item": None}
 
     quantity_max, rest = _take_range_max(rest, quantity)
+    if quantity_max is not None and quantity_max < 1 and quantity_max < quantity:
+        # "1-1/2 cups" is a hyphenated mixed number (1½), not a range down to ½.
+        quantity, quantity_max = quantity + quantity_max, None
 
     rest = rest.lstrip()
     paren_match = _PAREN_RE.match(rest)
