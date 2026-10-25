@@ -1,7 +1,10 @@
 import io
 from datetime import datetime
 
-from PIL import Image, ImageOps
+from PIL import Image, ImageCms, ImageOps
+
+SRGB = ImageCms.ImageCmsProfile(ImageCms.createProfile("sRGB"))
+SRGB_ICC = SRGB.tobytes()
 
 MAX_UPLOAD_BYTES = 25 * 1024 * 1024
 MAX_LONG_SIDE = 1600
@@ -28,6 +31,21 @@ def _resized(im, long_side):
     return im.resize((round(w * scale), round(h * scale)), Image.LANCZOS)
 
 
+def _to_srgb(im, icc):
+    """Converts using the photo's embedded color profile. Phone and Mac
+    photos are usually Display P3; dropping that profile without converting
+    makes browsers read the pixels as sRGB, which looks washed out."""
+    if icc:
+        try:
+            source = ImageCms.ImageCmsProfile(io.BytesIO(icc))
+            if im.mode not in ("RGB", "CMYK", "L"):
+                im = im.convert("RGB")
+            return ImageCms.profileToProfile(im, source, SRGB, outputMode="RGB")
+        except (ImageCms.PyCMSError, OSError, ValueError):
+            pass
+    return im.convert("RGB")
+
+
 def save_recipe_image(file_storage, images_dir, recipe_id):
     """Validates and processes an uploaded photo, saving a full-size (max 1600px)
     and a 400px thumbnail JPEG. Returns the main image filename."""
@@ -45,8 +63,9 @@ def save_recipe_image(file_storage, images_dir, recipe_id):
     except Exception as exc:
         raise InvalidImage("File is not a readable image.") from exc
 
+    icc = im.info.get("icc_profile")
     im = ImageOps.exif_transpose(im)
-    im = im.convert("RGB")
+    im = _to_srgb(im, icc)
 
     full = _resized(im, MAX_LONG_SIDE)
     thumb = _resized(im, THUMB_LONG_SIDE)
@@ -54,8 +73,8 @@ def save_recipe_image(file_storage, images_dir, recipe_id):
     timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
     filename = f"recipe-{recipe_id}-{timestamp}.jpg"
 
-    full.save(images_dir / filename, "JPEG", quality=85)
-    thumb.save(images_dir / thumb_filename(filename), "JPEG", quality=85)
+    full.save(images_dir / filename, "JPEG", quality=85, icc_profile=SRGB_ICC)
+    thumb.save(images_dir / thumb_filename(filename), "JPEG", quality=85, icc_profile=SRGB_ICC)
 
     return filename
 
