@@ -1,58 +1,132 @@
-from flask import Blueprint, abort, flash, jsonify, redirect, render_template, request, url_for
+from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
 
 from app import get_db
 from app.images import InvalidImage, delete_recipe_image, save_recipe_image
-from app.ingredients.parser import parse_ingredient
+from app.ingredients.parser import parse_amount
+from app.ingredients.scaling import format_amount
+from app.ingredients.units import UNIT_LABELS
 from app.models.categories import list_categories
-from app.models.recipes import delete_recipe, get_recipe, save_recipe, set_image_filename, update_note
+from app.models.recipes import (
+    delete_recipe, get_recipe, save_recipe, set_image_filename, split_guess, update_note,
+)
 from app.sanitize import sanitize_instructions
 
 bp = Blueprint("edit", __name__, url_prefix="/recipes")
 
 
-def _parse_ingredients(form):
-    kinds = form.getlist("ingredient_kind")
-    texts = form.getlist("ingredient_text")
-    no_scales = form.getlist("ingredient_no_scale")
-    is_splits = form.getlist("ingredient_is_split")
-    quantities = form.getlist("ingredient_quantity")
-    quantity_maxes = form.getlist("ingredient_quantity_max")
-    units = form.getlist("ingredient_unit")
-    items = form.getlist("ingredient_item")
+UNIT_CHOICES = [
+    "tsp", "tbsp", "cup", "fl_oz", "pt", "qt", "gal", "oz", "lb",
+    "ml", "l", "g", "kg", "stick", "can", "package", "clove", "pinch", "dash",
+]
 
-    def _at(lst, i, default=""):
-        return lst[i] if i < len(lst) else default
 
-    ingredients = []
-    for i in range(len(texts)):
-        kind = _at(kinds, i, "item")
-        text = _at(texts, i)
-        no_scale = _at(no_scales, i)
-        is_split = _at(is_splits, i)
-        quantity = _at(quantities, i)
-        quantity_max = _at(quantity_maxes, i)
-        unit = _at(units, i)
-        item = _at(items, i)
-        text = text.strip()
-        if not text:
+def _form_rows_from_ingredients(ingredients):
+    """Editor rows for saved ingredients. Lines that were never split are
+    pre-filled with the parser's best guess and flagged so they get a look
+    before saving -- saving turns them into split rows."""
+    rows = []
+    for ing in ingredients:
+        if ing["kind"] == "heading":
+            rows.append({"kind": "heading", "heading": ing["raw_text"]})
             continue
-        ingredients.append({
-            "kind": kind if kind in ("item", "heading") else "item",
-            "raw_text": text,
-            "no_scale": 1 if no_scale == "1" else 0,
-            "is_split": 1 if is_split == "1" and quantity else 0,
-            "quantity": float(quantity) if is_split == "1" and quantity else None,
-            "quantity_max": float(quantity_max) if is_split == "1" and quantity_max else None,
-            "unit": unit or None if is_split == "1" else None,
-            "item": item or None if is_split == "1" else None,
+        if ing["is_split"] and ing["quantity"] is not None:
+            q, q_max, unit, item, guess_from = (
+                ing["quantity"], ing["quantity_max"], ing["unit"], ing["item"], None,
+            )
+        else:
+            parsed = split_guess(ing["raw_text"])
+            if parsed:
+                q, q_max, unit, item = (parsed["quantity"], parsed["quantity_max"],
+                                        parsed["unit"], parsed["item"])
+            else:
+                q, q_max, unit, item = None, None, None, ing["raw_text"]
+            guess_from = ing["raw_text"] if q is not None else None
+        rows.append({
+            "kind": "item",
+            "quantity": format_amount(q) if q is not None else "",
+            "quantity_max": format_amount(q_max) if q_max else "",
+            "unit": unit or "",
+            "item": item or "",
+            "no_scale": bool(ing["no_scale"]) and q is not None,
+            "guess_from": guess_from,
         })
-    return ingredients
+    return rows
 
 
-@bp.route("/parse-ingredient")
-def parse_ingredient_api():
-    text = request.args.get("text", "")
-    return jsonify(parse_ingredient(text))
+def _form_rows_from_request(form):
+    def at(name, i):
+        values = form.getlist(name)
+        return values[i].strip() if i < len(values) else ""
+
+    rows = []
+    for i, kind in enumerate(form.getlist("ingredient_kind")):
+        if kind == "heading":
+            rows.append({"kind": "heading", "heading": at("ingredient_heading", i)})
+        else:
+            rows.append({
+                "kind": "item",
+                "quantity": at("ingredient_quantity", i),
+                "quantity_max": at("ingredient_quantity_max", i),
+                "unit": at("ingredient_unit", i),
+                "item": at("ingredient_item", i),
+                "no_scale": at("ingredient_no_scale", i) == "1",
+                "guess_from": None,
+            })
+    return rows
+
+
+def _ingredients_from_rows(rows):
+    """Validated ingredient dicts for save_recipe, plus error messages. Every
+    item row is split: an amount (and optional unit/range) plus an
+    ingredient. A row with no amount ("salt to taste") is saved as just its
+    name and never scaled."""
+    ingredients, errors = [], []
+    for n, row in enumerate(rows, start=1):
+        if row["kind"] == "heading":
+            if row["heading"]:
+                ingredients.append({"kind": "heading", "raw_text": row["heading"]})
+            continue
+
+        q_text, max_text, item = row["quantity"], row["quantity_max"], row["item"]
+        if not (q_text or max_text or item):
+            continue
+        q = parse_amount(q_text)
+        q_max = parse_amount(max_text)
+        unit = row["unit"] if row["unit"] in UNIT_LABELS else None
+        label = f"Ingredient {n}" + (f" ({item})" if item else "")
+
+        if q_text and q is None:
+            errors.append(f"{label}: “{q_text}” isn't an amount. Use numbers like 2, 1 1/2, or ¾.")
+            continue
+        if max_text and q_max is None:
+            errors.append(f"{label}: “{max_text}” isn't an amount.")
+            continue
+        if q_max is not None and (q is None or q_max <= q):
+            errors.append(f"{label}: the “to” amount must be larger than the first amount.")
+            continue
+        if not item:
+            errors.append(f"Ingredient {n}: add what the ingredient is.")
+            continue
+
+        if q is None:
+            ingredients.append({
+                "kind": "item", "raw_text": item, "is_split": 0, "no_scale": 1,
+                "quantity": None, "quantity_max": None, "unit": None, "item": None,
+            })
+        else:
+            ingredients.append({
+                "kind": "item", "is_split": 1, "no_scale": 1 if row["no_scale"] else 0,
+                "quantity": q, "quantity_max": q_max, "unit": unit, "item": item,
+            })
+    return ingredients, errors
+
+
+def _render_form(recipe, rows, notes, status=200):
+    return render_template(
+        "edit.html", recipe=recipe, rows=rows, notes=notes,
+        categories=list_categories(get_db()), unit_choices=UNIT_CHOICES,
+        unit_labels=UNIT_LABELS,
+    ), status
 
 
 def _parse_fields(form):
@@ -77,9 +151,9 @@ def _parse_fields(form):
 
 @bp.route("/new", methods=["GET"])
 def new():
-    db = get_db()
-    categories = list_categories(db)
-    return render_template("edit.html", recipe=None, ingredients=[], notes=[], categories=categories)
+    blank = {"kind": "item", "quantity": "", "quantity_max": "", "unit": "", "item": "",
+             "no_scale": False, "guess_from": None}
+    return _render_form(None, [dict(blank) for _ in range(3)], [])
 
 
 @bp.route("/<int:recipe_id>/edit", methods=["GET"])
@@ -88,23 +162,28 @@ def edit(recipe_id):
     data = get_recipe(db, recipe_id)
     if data is None:
         abort(404)
-    categories = list_categories(db)
-    return render_template(
-        "edit.html", recipe=data["recipe"], ingredients=data["ingredients"],
-        notes=data["notes"], categories=categories,
-    )
+    return _render_form(data["recipe"], _form_rows_from_ingredients(data["ingredients"]), data["notes"])
+
+
+def _validate(form):
+    """Parsed fields + ingredients, or a list of problems to show."""
+    fields = _parse_fields(form)
+    rows = _form_rows_from_request(form)
+    ingredients, errors = _ingredients_from_rows(rows)
+    if not fields["title"]:
+        errors.insert(0, "Title is required.")
+    return fields, rows, ingredients, errors
 
 
 @bp.route("/new", methods=["POST"])
 def create():
     db = get_db()
-    fields = _parse_fields(request.form)
-    if not fields["title"]:
-        flash("Title is required.")
-        categories = list_categories(db)
-        return render_template("edit.html", recipe=None, ingredients=[], notes=[], categories=categories), 400
+    fields, rows, ingredients, errors = _validate(request.form)
+    if errors:
+        for e in errors:
+            flash(e)
+        return _render_form(None, rows, [], status=400)
 
-    ingredients = _parse_ingredients(request.form)
     recipe_id = save_recipe(db, None, fields, ingredients)
 
     image_file = request.files.get("image")
@@ -126,16 +205,12 @@ def update(recipe_id):
     if data is None:
         abort(404)
 
-    fields = _parse_fields(request.form)
-    if not fields["title"]:
-        flash("Title is required.")
-        categories = list_categories(db)
-        return render_template(
-            "edit.html", recipe=data["recipe"], ingredients=data["ingredients"],
-            notes=data["notes"], categories=categories,
-        ), 400
+    fields, rows, ingredients, errors = _validate(request.form)
+    if errors:
+        for e in errors:
+            flash(e)
+        return _render_form(data["recipe"], rows, data["notes"], status=400)
 
-    ingredients = _parse_ingredients(request.form)
     save_recipe(db, recipe_id, fields, ingredients)
 
     for note in data["notes"]:

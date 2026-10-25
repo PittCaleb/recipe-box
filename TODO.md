@@ -41,9 +41,3 @@ an explanatory note.
   compares them side by side, merges or dismisses each.
 - [ ] Work through the 18 groups.
 - [ ] Then clear the remaining non-duplicate items in the Needs-review queue.
-
-## Feature idea — add a recipe's ingredients to a shopping list
-
-- [ ] From a recipe, add all of its ingredients to a shopping list.
-  How and what that list is (in-app list, export to a notes/reminders app,
-  copy as text, etc.) is still to be decided.

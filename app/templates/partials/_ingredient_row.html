@@ -1,0 +1,36 @@
+{% from "_icons.html" import icon %}
+{% macro ingredient_row(row) %}
+{%- set heading = row.kind == 'heading' -%}
+<div class="ingredient-row{% if row.guess_from %} is-guess{% endif %}" data-kind="{{ row.kind }}">
+  <input type="hidden" name="ingredient_kind" value="{{ row.kind }}">
+  <input type="hidden" name="ingredient_no_scale" value="{{ '1' if row.no_scale else '0' }}">
+  <div class="ing-move">
+    <button type="button" class="row-btn" data-move="up" aria-label="Move up">&uarr;</button>
+    <button type="button" class="row-btn" data-move="down" aria-label="Move down">&darr;</button>
+  </div>
+  <input type="text" name="ingredient_heading" class="ing-heading" value="{{ row.heading or '' }}"
+         placeholder="Heading, e.g. For the crust" aria-label="Heading">
+  <input type="text" name="ingredient_quantity" class="ing-qty" value="{{ row.quantity or '' }}"
+         placeholder="2" aria-label="Amount" autocomplete="off">
+  <div class="ing-range">
+    <button type="button" class="ing-range-add" data-range-add{% if row.quantity_max %} hidden{% endif %}
+            title="For amounts like 2–3 cups">+ range</button>
+    <input type="text" name="ingredient_quantity_max" class="ing-qty-max" value="{{ row.quantity_max or '' }}"
+           placeholder="to" aria-label="Up to amount, for a range like 2–3" autocomplete="off"{% if not row.quantity_max %} hidden{% endif %}>
+  </div>
+  <select name="ingredient_unit" class="ing-unit" aria-label="Unit">
+    <option value="">&mdash;</option>
+    {% for u in unit_choices %}<option value="{{ u }}"{% if row.unit == u %} selected{% endif %}>{{ unit_labels[u][0] }}</option>{% endfor %}
+  </select>
+  <input type="text" name="ingredient_item" class="ing-item" value="{{ row.item or '' }}"
+         placeholder="flour, sifted" aria-label="Ingredient">
+  <div class="ing-actions">
+    <button type="button" class="icon-btn icon-btn--sm ing-scale-toggle{% if row.no_scale %} is-on{% endif %}" data-toggle="no_scale"
+            aria-pressed="{{ 'true' if row.no_scale else 'false' }}" aria-label="Don't scale this amount">{{ icon('lock', 16) }}</button>
+    <button type="button" class="icon-btn icon-btn--sm" data-toggle="heading"
+            aria-label="{{ 'Make it an ingredient' if heading else 'Make it a heading' }}">{{ icon('heading', 16) }}</button>
+    <button type="button" class="icon-btn icon-btn--sm icon-btn--danger" data-remove aria-label="Delete row">{{ icon('x', 16) }}</button>
+  </div>
+  {% if row.guess_from %}<p class="ing-guess-note">From &ldquo;{{ row.guess_from }}&rdquo;</p>{% endif %}
+</div>
+{% endmacro %}
