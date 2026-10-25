@@ -211,3 +211,19 @@ def test_scale_ingredient_line_range():
 def test_scale_ingredient_line_default_multiplier_matches_original_values():
     ing = _ing(quantity=3, unit=None, item="eggs", raw_text="3 eggs")
     assert scale_ingredient_line(ing, 1) == "3 eggs"
+
+
+def test_three_quarter_stop_between_two_thirds_and_one():
+    from app.ingredients.scaling import MULTIPLIER_LABELS, MULTIPLIER_STOPS
+    assert MULTIPLIER_STOPS == sorted(MULTIPLIER_STOPS)
+    i = MULTIPLIER_STOPS.index(0.75)
+    assert MULTIPLIER_LABELS[i] == "¾"
+    assert MULTIPLIER_LABELS[i - 1] == "⅔" and MULTIPLIER_LABELS[i + 1] == "1"
+    assert len(MULTIPLIER_STOPS) == len(MULTIPLIER_LABELS)
+
+
+def test_three_quarter_scaling_of_a_cup():
+    from app.ingredients.scaling import scale_ingredient_line
+    ing = {"kind": "item", "no_scale": 0, "is_split": 1, "quantity": 1.0,
+           "quantity_max": None, "unit": "cup", "item": "flour"}
+    assert scale_ingredient_line(ing, 0.75) == "¾ cup flour"
