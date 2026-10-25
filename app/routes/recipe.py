@@ -3,6 +3,7 @@ from flask import Blueprint, abort, redirect, render_template, request, url_for
 from app import get_db
 from app.ingredients.scaling import DEFAULT_MULTIPLIER, MULTIPLIER_LABELS, MULTIPLIER_STOPS, scale_ingredient_line
 from app.models.recipes import add_note, delete_note, get_recipe, mark_made_today, toggle_favorite
+from app.shopping import SHORTCUT_NAME, shopping_entry, shopping_list
 
 bp = Blueprint("recipe", __name__, url_prefix="/recipes")
 
@@ -19,18 +20,36 @@ def view(recipe_id):
     db = get_db()
     data = _get_or_404(db, recipe_id)
 
+    ingredients = data["ingredients"]
     scaled_variants = None
     if data["scalable"]:
         scaled_variants = [
-            [scale_ingredient_line(ing, m) for ing in data["ingredients"]]
+            [scale_ingredient_line(ing, m) for ing in ingredients]
             for m in MULTIPLIER_STOPS
         ]
+
+    # One set of shopping entries per slider stop, so the list matches the
+    # amounts on screen; unscalable recipes only ever show the default.
+    stops = MULTIPLIER_STOPS if data["scalable"] else [DEFAULT_MULTIPLIER]
+    shopping = {
+        "shortcut": SHORTCUT_NAME,
+        "stops": [
+            {
+                "items": [shopping_entry(ing, m) for ing in ingredients],
+                "all": shopping_list(ingredients, m),
+            }
+            for m in stops
+        ],
+    }
+    default_entries = shopping["stops"][stops.index(DEFAULT_MULTIPLIER)]["items"]
 
     return render_template(
         "recipe_view.html", **data,
         scaled_variants=scaled_variants,
         multiplier_labels=MULTIPLIER_LABELS,
         default_index=MULTIPLIER_STOPS.index(DEFAULT_MULTIPLIER),
+        shopping=shopping,
+        shoppable=[entry is not None for entry in default_entries],
     )
 
 
