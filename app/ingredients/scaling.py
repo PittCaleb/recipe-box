@@ -1,8 +1,8 @@
 from app.ingredients.units import format_scaled, format_scaled_range
 
 # Discrete slider stops, left to right, per SPEC.md 6.5.
-MULTIPLIER_STOPS = [0.25, 1 / 3, 0.5, 2 / 3, 1, 1.5, 2, 3, 4]
-MULTIPLIER_LABELS = ["¼", "⅓", "½", "⅔", "1", "1½", "2", "3", "4"]
+MULTIPLIER_STOPS = [0.25, 1 / 3, 0.5, 2 / 3, 0.75, 1, 1.5, 2, 3, 4]
+MULTIPLIER_LABELS = ["¼", "⅓", "½", "⅔", "¾", "1", "1½", "2", "3", "4"]
 DEFAULT_MULTIPLIER = 1.0
 
 
