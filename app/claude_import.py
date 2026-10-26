@@ -5,9 +5,11 @@ sub-group labels become heading ingredients, uncertain text gets a
 [?guess?] marker plus needs_review, a page may hold zero to several
 recipes, and margin/handwritten annotations become notes."""
 import base64
+import io
 from typing import Literal, Optional
 
 import anthropic
+from PIL import Image
 from pydantic import BaseModel, Field
 
 
@@ -84,14 +86,35 @@ def _build_user_text(existing_categories, existing_titles, default_contributor, 
     return "\n".join(lines)
 
 
+# Opus 5.5 reads images at up to 2576px on the long edge (larger ones are
+# downscaled server-side anyway), and the API rejects any image whose base64
+# exceeds 10 MB. Pages rendered from phone photos as PNG blow well past that
+# (~13 MB), so send a right-sized JPEG instead.
+MAX_LONG_EDGE = 2576
+MAX_B64_BYTES = 9 * 1024 * 1024
+
+
+def api_image_b64(image_path):
+    """The page image as base64 JPEG, sized for the API: no larger than the
+    model can use, and safely under the per-image size limit."""
+    with Image.open(image_path) as im:
+        im = im.convert("RGB")
+        im.thumbnail((MAX_LONG_EDGE, MAX_LONG_EDGE), Image.LANCZOS)
+        for quality in (90, 80, 70, 60, 50):
+            buf = io.BytesIO()
+            im.save(buf, "JPEG", quality=quality, optimize=True)
+            encoded = base64.standard_b64encode(buf.getvalue())
+            if len(encoded) <= MAX_B64_BYTES:
+                break
+    return encoded.decode("ascii")
+
+
 def extract_recipes_from_page(
     image_path, api_key, model, existing_categories=None, existing_titles=None,
     default_contributor=None, page_num=1,
 ):
     client = anthropic.Anthropic(api_key=api_key)
-
-    with open(image_path, "rb") as f:
-        image_b64 = base64.standard_b64encode(f.read()).decode("utf-8")
+    image_b64 = api_image_b64(image_path)
 
     user_text = _build_user_text(
         existing_categories or [], existing_titles or [], default_contributor, page_num
@@ -104,7 +127,7 @@ def extract_recipes_from_page(
         messages=[{
             "role": "user",
             "content": [
-                {"type": "image", "source": {"type": "base64", "media_type": "image/png", "data": image_b64}},
+                {"type": "image", "source": {"type": "base64", "media_type": "image/jpeg", "data": image_b64}},
                 {"type": "text", "text": user_text},
             ],
         }],

@@ -194,3 +194,57 @@ def test_range_field_hidden_behind_link_unless_used(client, db):
     assert 'value=""' in flour.split("ingredient_quantity_max")[1][:120]
     assert 'autocomplete="off" hidden>' in flour
     assert "+ range" in flour
+
+
+# --- Nothing typed is lost when a save fails ---
+
+def _bad_save_form(title="Hand Typed", **extra):
+    data = _form([("item", "", "0", "", "", "salt (optional)", "0")], title=title)
+    data.update({
+        "contributor": "Aunt Bea", "source": "Notebook", "servings": "4",
+        "prep_time": "10 min", "cook_time": "20 min", "rating": "4", "last_made": "2026-10-01",
+        "favorite": "1",
+        "instructions_html": "<p>Whisk <strong>gently</strong> for ten minutes.</p><script>x()</script>",
+    })
+    data.update(extra)
+    return data
+
+
+def test_failed_new_recipe_keeps_every_field(client, db):
+    resp = client.post("/recipes/new", data=_bad_save_form())
+    assert resp.status_code == 400
+    html = resp.data.decode()
+    for expected in ('value="Hand Typed"', 'value="Aunt Bea"', 'value="Notebook"', 'value="4"',
+                     'value="10 min"', 'value="20 min"', 'value="2026-10-01"',
+                     "<p>Whisk <strong>gently</strong> for ten minutes.</p>",
+                     'value="salt (optional)"', "leave it blank if there"):
+        assert expected in html, expected
+    assert "<script>x()</script>" not in html
+    assert 'name="favorite" value="1" checked' in html
+    assert db.execute("SELECT COUNT(*) FROM recipes").fetchone()[0] == 0
+
+
+def test_failed_edit_keeps_unsaved_changes_and_note_edits(client, db):
+    rid = seed_recipe(db, title="Saved Title", instructions_html="<p>Old steps.</p>")
+    sync_fts(db, rid, "Saved Title")
+    db.execute("INSERT INTO notes (recipe_id, body, created_at) VALUES (?, 'old note', '2026-01-01')", (rid,))
+    db.commit()
+    note_id = db.execute("SELECT id FROM notes WHERE recipe_id=?", (rid,)).fetchone()["id"]
+
+    resp = client.post(f"/recipes/{rid}", data=_bad_save_form(
+        title="Edited Title", **{f"note_body_{note_id}": "edited note"}))
+    assert resp.status_code == 400
+    html = resp.data.decode()
+    assert 'value="Edited Title"' in html
+    assert "Whisk <strong>gently</strong>" in html
+    assert "Old steps." not in html
+    assert "edited note" in html
+    assert f'action="/recipes/{rid}"' in html
+    assert db.execute("SELECT title FROM recipes WHERE id=?", (rid,)).fetchone()["title"] == "Saved Title"
+
+
+def test_normal_edit_page_still_shows_saved_values(client, db):
+    rid = seed_recipe(db, title="Saved", contributor="Pat", instructions_html="<p>Steps.</p>")
+    sync_fts(db, rid, "Saved")
+    html = client.get(f"/recipes/{rid}/edit").data.decode()
+    assert 'value="Saved"' in html and 'value="Pat"' in html and "<p>Steps.</p>" in html
