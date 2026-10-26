@@ -13,7 +13,7 @@ def require_login():
         return None
     if session.get("authenticated"):
         return None
-    return redirect(url_for("auth.login", next=request.path))
+    return redirect(url_for("auth.login", next=request.script_root + request.path))
 
 
 @bp.route("/login", methods=["GET", "POST"])
@@ -25,7 +25,9 @@ def login():
     if request.method == "POST":
         if request.form.get("password") == cfg.APP_PASSWORD:
             session["authenticated"] = True
-            next_url = request.form.get("next") or url_for("browse.index")
+            next_url = request.form.get("next", "")
+            if not next_url.startswith("/") or next_url.startswith("//"):
+                next_url = url_for("browse.index")
             return redirect(next_url)
         flash("Incorrect password.")
 
