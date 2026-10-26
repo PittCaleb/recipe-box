@@ -17,7 +17,7 @@
 
     <div class="field">
       <label for="title">Title</label>
-      <input type="text" id="title" name="title" value="{{ recipe['title'] if recipe else '' }}" required>
+      <input type="text" id="title" name="title" value="{{ values.title or '' }}" required>
     </div>
 
     <div class="field-row">
@@ -26,33 +26,33 @@
         <select id="category_id" name="category_id">
           <option value="">(none)</option>
           {% for c in categories %}
-          <option value="{{ c['id'] }}" {% if recipe and recipe['category_id'] == c['id'] %}selected{% endif %}>{{ c['name'] }}</option>
+          <option value="{{ c['id'] }}" {% if values.category_id == c['id'] %}selected{% endif %}>{{ c['name'] }}</option>
           {% endfor %}
         </select>
       </div>
       <div class="field">
         <label for="contributor">Contributor</label>
-        <input type="text" id="contributor" name="contributor" value="{{ recipe['contributor'] if recipe else '' }}">
+        <input type="text" id="contributor" name="contributor" value="{{ values.contributor or '' }}">
       </div>
     </div>
 
     <div class="field">
       <label for="source">Source</label>
-      <input type="text" id="source" name="source" value="{{ recipe['source'] if recipe else '' }}">
+      <input type="text" id="source" name="source" value="{{ values.source or '' }}">
     </div>
 
     <div class="field-row">
       <div class="field">
         <label for="servings">Servings</label>
-        <input type="text" id="servings" name="servings" value="{{ recipe['servings'] if recipe else '' }}">
+        <input type="text" id="servings" name="servings" value="{{ values.servings or '' }}">
       </div>
       <div class="field">
         <label for="prep_time">Prep time</label>
-        <input type="text" id="prep_time" name="prep_time" value="{{ recipe['prep_time'] if recipe else '' }}">
+        <input type="text" id="prep_time" name="prep_time" value="{{ values.prep_time or '' }}">
       </div>
       <div class="field">
         <label for="cook_time">Cook time</label>
-        <input type="text" id="cook_time" name="cook_time" value="{{ recipe['cook_time'] if recipe else '' }}">
+        <input type="text" id="cook_time" name="cook_time" value="{{ values.cook_time or '' }}">
       </div>
     </div>
 
@@ -62,23 +62,23 @@
         <select id="rating" name="rating">
           <option value="">(none)</option>
           {% for n in range(1, 6) %}
-          <option value="{{ n }}" {% if recipe and recipe['rating'] == n %}selected{% endif %}>{{ n }} star{{ 's' if n != 1 }}</option>
+          <option value="{{ n }}" {% if values.rating == n %}selected{% endif %}>{{ n }} star{{ 's' if n != 1 }}</option>
           {% endfor %}
         </select>
       </div>
       <div class="field">
         <label for="last_made">Last made</label>
-        <input type="date" id="last_made" name="last_made" value="{{ recipe['last_made'] if recipe else '' }}">
+        <input type="date" id="last_made" name="last_made" value="{{ values.last_made or '' }}">
       </div>
     </div>
 
     <div class="field-row field-row--checks">
       <label class="toggle-chip">
-        <input type="checkbox" name="favorite" value="1" {% if recipe and recipe['favorite'] %}checked{% endif %}>
+        <input type="checkbox" name="favorite" value="1" {% if values.favorite %}checked{% endif %}>
         Favorite
       </label>
       <label class="toggle-chip">
-        <input type="checkbox" name="needs_review" value="1" {% if recipe and recipe['needs_review'] %}checked{% endif %}>
+        <input type="checkbox" name="needs_review" value="1" {% if values.needs_review %}checked{% endif %}>
         Needs review
       </label>
     </div>
@@ -120,7 +120,7 @@
 
     <div class="field">
       <label>Instructions</label>
-      <div id="quill-editor" class="quill-editor">{{ (recipe['instructions_html'] if recipe else '')|safe }}</div>
+      <div id="quill-editor" class="quill-editor">{{ (values.instructions_html or '')|safe }}</div>
       <input type="hidden" name="instructions_html" id="instructions_html">
     </div>
 
