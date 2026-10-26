@@ -96,7 +96,7 @@ def _ingredients_from_rows(rows):
         label = f"Ingredient {n}" + (f" ({item})" if item else "")
 
         if q_text and q is None:
-            errors.append(f"{label}: “{q_text}” isn't an amount. Use numbers like 2, 1 1/2, or ¾.")
+            errors.append(f"{label}: “{q_text}” isn't an amount. Use numbers like 2, 1 1/2, or ¾ — or leave it blank if there's no amount.")
             continue
         if max_text and q_max is None:
             errors.append(f"{label}: “{max_text}” isn't an amount.")
@@ -121,12 +121,24 @@ def _ingredients_from_rows(rows):
     return ingredients, errors
 
 
-def _render_form(recipe, rows, notes, status=200):
+def _render_form(recipe, rows, notes, values=None, status=200):
+    """`values` fills the fields; when a save fails it's what was submitted,
+    so nothing typed is lost. `recipe` is only the saved recipe, if any (for
+    its id, photo, and scan)."""
+    if values is None:
+        values = dict(recipe) if recipe else {}
     return render_template(
-        "edit.html", recipe=recipe, rows=rows, notes=notes,
+        "edit.html", recipe=recipe, rows=rows, notes=notes, values=values,
         categories=list_categories(get_db()), unit_choices=UNIT_CHOICES,
         unit_labels=UNIT_LABELS,
     ), status
+
+
+def _notes_with_submitted_edits(notes, form):
+    return [
+        {**dict(n), "body": form.get(f"note_body_{n['id']}", n["body"])}
+        for n in notes
+    ]
 
 
 def _parse_fields(form):
@@ -182,7 +194,7 @@ def create():
     if errors:
         for e in errors:
             flash(e)
-        return _render_form(None, rows, [], status=400)
+        return _render_form(None, rows, [], values=fields, status=400)
 
     recipe_id = save_recipe(db, None, fields, ingredients)
 
@@ -209,7 +221,10 @@ def update(recipe_id):
     if errors:
         for e in errors:
             flash(e)
-        return _render_form(data["recipe"], rows, data["notes"], status=400)
+        return _render_form(
+            data["recipe"], rows, _notes_with_submitted_edits(data["notes"], request.form),
+            values=fields, status=400,
+        )
 
     save_recipe(db, recipe_id, fields, ingredients)
 
