@@ -344,3 +344,32 @@ def test_import_requires_login_when_password_set(cfg):
     resp = client.get("/admin/import/")
     assert resp.status_code == 302
     assert "/login" in resp.headers["Location"]
+
+
+def test_api_image_is_resized_jpeg_under_the_limit(tmp_path):
+    import base64, io, os
+    from PIL import Image
+    from app.claude_import import MAX_B64_BYTES, MAX_LONG_EDGE, api_image_b64
+
+    # Random noise is the worst case for compression -- like a photo page.
+    page = Image.frombytes("RGB", (2250, 3000), os.urandom(2250 * 3000 * 3))
+    path = tmp_path / "page.png"
+    page.save(path)
+    assert path.stat().st_size * 4 / 3 > 10 * 1024 * 1024  # what used to be sent
+
+    b64 = api_image_b64(path)
+    assert len(b64) <= MAX_B64_BYTES
+    sent = Image.open(io.BytesIO(base64.b64decode(b64)))
+    assert sent.format == "JPEG"
+    assert max(sent.size) == MAX_LONG_EDGE
+
+
+def test_small_page_is_not_upscaled(tmp_path):
+    import base64, io
+    from PIL import Image
+    from app.claude_import import api_image_b64
+
+    path = tmp_path / "small.png"
+    Image.new("RGB", (800, 1000), "white").save(path)
+    sent = Image.open(io.BytesIO(base64.b64decode(api_image_b64(path))))
+    assert sent.size == (800, 1000)
