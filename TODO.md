@@ -2,6 +2,31 @@
 
 Open items, shelved for now — nothing here blocks using the app day to day.
 
+## Deploying to the NAS (mockingnas)
+
+Live at http://nas.local/recipes/ as the `recipes` container behind
+[mockingnas-dash](https://github.com/PittCaleb/mockingnas-dash). **The NAS copy is the live one**; data on the Mac is
+a stale snapshot from 2026-10-26.
+
+To ship a change:
+1. Merge the PR to `main`. The **Docker image** GitHub Action builds and pushes `ghcr.io/pittcaleb/recipe-box:latest`
+   (a few minutes; watch the repo's Actions tab).
+2. From the Mac, pull it and restart the container:
+   ```sh
+   ssh user@nas.local /share/Container/apps/update.sh recipes
+   ```
+
+Other handy commands:
+```sh
+ssh user@nas.local /share/Container/apps/dc.sh restart recipes          # restart, no new image
+ssh user@nas.local /share/Container/apps/dc.sh logs --tail 100 recipes  # recent logs
+ssh user@nas.local /share/Container/apps/dc.sh ps                     # what's running
+```
+
+Data on the NAS: `/share/Container/apps/data/recipes/` (recipes.db, images/, scans/, import/, pdf/). Copy files over with `rsync`
+(not `scp`). Secrets (Anthropic key, `RECIPES_SECRET_KEY`) are in `/share/Container/apps/env/recipes.env`; edit that and
+restart to change them. Migrations run by themselves when the container starts. Setup and adding apps: mockingnas-dash's TODO.md.
+
 ## Recipe image export — confirm in a real browser
 
 - [ ] On the Mac at `http://127.0.0.1:5050`, open a recipe → **Copy image**,
