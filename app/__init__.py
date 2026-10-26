@@ -1,4 +1,7 @@
+import os
+
 from flask import Flask, g
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 from config import config as default_config
 from app.db import get_connection, run_migrations
@@ -11,6 +14,13 @@ def create_app(config_obj=None):
 
     app = Flask(__name__)
     app.config["RECIPES_CONFIG"] = cfg
+    # Behind the NAS reverse proxy the app lives at /recipes: the proxy sends
+    # X-Forwarded-Prefix and url_for() builds every link under it. Run
+    # directly, there's no header and nothing changes.
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
+    # Other apps share the NAS hostname; a distinct cookie name keeps their
+    # Flask sessions from overwriting ours.
+    app.config["SESSION_COOKIE_NAME"] = "recipes_session"
 
     @app.teardown_appcontext
     def close_db(_exc):
@@ -18,8 +28,10 @@ def create_app(config_obj=None):
         if db is not None:
             db.close()
 
+    # A fixed key (set in the container's env) keeps people logged in across
+    # restarts; without one, each start signs everyone out.
     import secrets
-    app.secret_key = secrets.token_hex(32)
+    app.secret_key = os.environ.get("RECIPES_SECRET_KEY") or secrets.token_hex(32)
 
     from app.routes.browse import bp as browse_bp
     from app.routes.recipe import bp as recipe_bp
