@@ -275,3 +275,44 @@ def test_needs_split_filter_empty_when_everything_is_split(client, db):
     rid = _make_recipe(db, title="Tidy")
     seed_ingredient(db, rid, 0, "2 cups flour", is_split=1, quantity=2, unit="cup", item="flour")
     assert b"Showing 0 of 1 recipes" in client.get("/api/search?needs_split=1").data
+
+
+def _chips(html):
+    import re
+    return re.findall(r'name="(favorites|needs_review|needs_split)"', html.decode())
+
+
+def test_worklist_chips_follow_favorites_and_hide_when_nothing_to_do(client, db):
+    rid = _make_recipe(db, title="Tidy")
+    seed_ingredient(db, rid, 0, "2 cups flour", is_split=1, quantity=2, unit="cup", item="flour")
+    assert _chips(client.get("/").data) == ["favorites"]
+
+    flagged = _make_recipe(db, title="Flagged", needs_review=1)
+    seed_ingredient(db, flagged, 0, "1 1/2 c. sugar")
+    assert _chips(client.get("/").data) == ["favorites", "needs_review", "needs_split"]
+
+
+def test_active_worklist_chip_stays_visible_even_when_empty(client, db):
+    _make_recipe(db, title="Tidy")
+    html = client.get("/?needs_split=1&needs_review=1").data
+    assert _chips(html) == ["favorites", "needs_review", "needs_split"]
+
+
+def test_recipe_page_heart_reflects_favorite(client, db):
+    rid = _make_recipe(db, title="Loved")
+    html = client.get(f"/recipes/{rid}").data.decode()
+    assert 'aria-label="Add to favorites"' in html
+    client.post(f"/recipes/{rid}/favorite")
+    html = client.get(f"/recipes/{rid}").data.decode()
+    assert 'aria-label="Remove from favorites"' in html
+    assert "favorite-toggle is-active" in html
+    actions = html[html.index('class="recipe-actions'):]
+    assert actions.index("favorite-toggle") < actions.index("I made this")
+
+
+def test_clear_filters_button_only_when_a_filter_is_on(client, db):
+    _make_recipe(db, title="Anything")
+    assert b'id="clear-filters"\n            hidden' in client.get("/").data
+    assert b'id="clear-filters"\n            hidden' in client.get("/?display=text&group=category").data
+    for query in ("q=cake", "favorites=1", "needs_split=1", "sort=recent_made", "category=1"):
+        assert b'id="clear-filters"\n            hidden' not in client.get(f"/?{query}").data, query
