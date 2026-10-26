@@ -10,6 +10,7 @@ import json
 from datetime import datetime
 
 from app.db import get_connection, run_migrations
+from app.ingredients.textcase import title_case_ingredient
 from config import config
 
 
@@ -74,6 +75,10 @@ def load(force=False):
             )
             recipe_id = cur.lastrowid
 
+            r["ingredients"] = [
+                {**ing, "raw_text": title_case_ingredient(ing["kind"], ing["raw_text"])}
+                for ing in r["ingredients"]
+            ]
             for pos, ing in enumerate(r["ingredients"]):
                 conn.execute(
                     """INSERT INTO ingredients (recipe_id, position, kind, raw_text, no_scale)

@@ -10,7 +10,7 @@
   <div class="recipe-card-body">
     <h3 class="recipe-card-title">
       {{ r['title'] }}
-      {% if r['favorite'] %}<span class="badge-icon badge-icon--favorite" aria-label="Favorite">{{ icon('star-filled', 14) }}</span>{% endif %}
+      {% if r['favorite'] %}<span class="badge-icon badge-icon--favorite" aria-label="Favorite">{{ icon('heart-filled', 14) }}</span>{% endif %}
     </h3>
     <p class="recipe-card-meta">
       {% if r['category_name'] %}<span>{{ r['category_name'] }}</span>{% endif %}
