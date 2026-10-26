@@ -3,16 +3,79 @@
   const results = document.getElementById("results");
   if (!form || !results) return;
 
+  const STATE_KEY = "recipes.browseQuery";
+
+  function currentQuery() {
+    return new URLSearchParams(new FormData(form)).toString();
+  }
+
+  function readState() {
+    try {
+      const stored = localStorage.getItem(STATE_KEY);
+      if (stored !== null) return stored;
+      // Older versions only remembered the view style; carry that over.
+      const legacy = new URLSearchParams();
+      ["display", "group"].forEach((kind) => {
+        const value = localStorage.getItem(`recipes.${kind}`);
+        if (value) legacy.set(kind, value);
+      });
+      return legacy.toString() || null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function saveState(query) {
+    try {
+      localStorage.setItem(STATE_KEY, query);
+    } catch (e) {
+      /* private browsing etc. -- filters just won't be remembered */
+    }
+  }
+
+  // Arriving at a bare "/" (header link, after editing, a new tab) restores
+  // the last search and filters. A full reload lets the server render that
+  // state exactly; replace() keeps it out of the Back history.
+  if (!window.location.search) {
+    const stored = readState();
+    if (stored) {
+      const merged = new URLSearchParams(currentQuery());
+      new URLSearchParams(stored).forEach((value, key) => merged.set(key, value));
+      if (merged.toString() !== currentQuery()) {
+        window.location.replace(`${window.location.pathname}?${stored}`);
+        return;
+      }
+    }
+  }
+
   const url = form.dataset.searchUrl;
+  const clearBtn = document.getElementById("clear-filters");
+  const sortSelect = document.getElementById("sort-select");
+  const groupToggle = document.getElementById("group-toggle");
+  const searchInput = document.getElementById("search-input");
   let debounceTimer = null;
   let activeController = null;
 
+  function filtersActive() {
+    const data = new FormData(form);
+    return Boolean(
+      (data.get("q") || "").trim() ||
+      data.get("category") ||
+      (data.get("sort") && data.get("sort") !== "name") ||
+      data.get("favorites") || data.get("needs_review") || data.get("needs_split"),
+    );
+  }
+
+  function updateClearButton() {
+    if (clearBtn) clearBtn.hidden = !filtersActive();
+  }
+
   function refresh() {
-    const params = new URLSearchParams(new FormData(form));
+    const query = currentQuery();
     if (activeController) activeController.abort();
     activeController = new AbortController();
 
-    fetch(`${url}?${params.toString()}`, { signal: activeController.signal })
+    fetch(`${url}?${query}`, { signal: activeController.signal })
       .then((res) => res.text())
       .then((html) => {
         results.innerHTML = html;
@@ -24,8 +87,9 @@
         if (err.name !== "AbortError") console.error(err);
       });
 
-    const newUrl = `${window.location.pathname}?${params.toString()}`;
-    window.history.replaceState(null, "", newUrl);
+    window.history.replaceState(null, "", `${window.location.pathname}?${query}`);
+    saveState(query);
+    updateClearButton();
   }
 
   function debouncedRefresh() {
@@ -37,25 +101,17 @@
   form.querySelectorAll("select, input[type=checkbox]").forEach((el) => {
     el.addEventListener("change", refresh);
   });
-  const searchInput = document.getElementById("search-input");
-  if (searchInput) {
-    searchInput.addEventListener("input", debouncedRefresh);
-  }
+  if (searchInput) searchInput.addEventListener("input", debouncedRefresh);
 
   // --- Display / group-by pill toggles ---
-  const sortSelect = document.getElementById("sort-select");
-  const groupToggle = document.getElementById("group-toggle");
   const hiddenInputs = {
     display: document.getElementById("display-input"),
     group: document.getElementById("group-input"),
   };
 
-  function setPref(kind, value, { persist = true, skipRefresh = false } = {}) {
+  function setPref(kind, value) {
     const input = hiddenInputs[kind];
-    if (!input || input.value === value) {
-      if (!skipRefresh && input && input.value !== value) refresh();
-      return;
-    }
+    if (!input || input.value === value) return;
     input.value = value;
     const group = form.querySelector(`[data-pill-group="${kind}"]`);
     if (group) {
@@ -65,14 +121,7 @@
         btn.setAttribute("aria-pressed", active ? "true" : "false");
       });
     }
-    if (persist) {
-      try {
-        localStorage.setItem(`recipes.${kind}`, value);
-      } catch (e) {
-        /* ignore (private browsing, etc.) */
-      }
-    }
-    if (!skipRefresh) refresh();
+    refresh();
   }
 
   function updateGroupAvailability() {
@@ -87,33 +136,30 @@
     btn.addEventListener("click", () => {
       const group = btn.closest("[data-pill-group]");
       if (group && group.classList.contains("pill-group--disabled")) return;
-      const kind = group.dataset.pillGroup;
-      setPref(kind, btn.dataset.value);
+      setPref(group.dataset.pillGroup, btn.dataset.value);
     });
   });
 
-  if (sortSelect) {
-    sortSelect.addEventListener("change", updateGroupAvailability);
-  }
+  if (sortSelect) sortSelect.addEventListener("change", updateGroupAvailability);
   updateGroupAvailability();
 
-  // On a fresh page load with no explicit display/group in the URL, fall
-  // back to the viewer's last-used preference from localStorage.
-  (function restorePreference() {
-    const urlParams = new URLSearchParams(window.location.search);
-    let changed = false;
-    ["display", "group"].forEach((kind) => {
-      if (urlParams.has(kind)) return;
-      try {
-        const stored = localStorage.getItem(`recipes.${kind}`);
-        if (stored && hiddenInputs[kind] && hiddenInputs[kind].value !== stored) {
-          setPref(kind, stored, { persist: false, skipRefresh: true });
-          changed = true;
-        }
-      } catch (e) {
-        /* ignore */
-      }
+  // --- Clear filters (keeps the Cards/Text and A–Z/Category view) ---
+  if (clearBtn) {
+    clearBtn.addEventListener("click", () => {
+      if (searchInput) searchInput.value = "";
+      const category = document.getElementById("category-select");
+      if (category) category.value = "";
+      if (sortSelect) sortSelect.value = "name";
+      form.querySelectorAll("input[type=checkbox]").forEach((box) => {
+        box.checked = false;
+      });
+      updateGroupAvailability();
+      refresh();
+      if (searchInput) searchInput.focus();
     });
-    if (changed) refresh();
-  })();
+  }
+
+  // Remember whatever state this page was opened with (e.g. a shared link).
+  saveState(currentQuery());
+  updateClearButton();
 })();

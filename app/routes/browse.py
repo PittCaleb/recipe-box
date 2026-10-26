@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, request
 
 from app import get_db
-from app.models.recipes import group_recipes, list_categories, search_recipes
+from app.models.recipes import group_recipes, list_categories, needs_split_ids, search_recipes
 
 bp = Blueprint("browse", __name__)
 
@@ -58,7 +58,9 @@ def index():
     db = get_db()
     params = _search_params()
     return render_template(
-        "index.html", categories=list_categories(db), **_results_context(db, params)
+        "index.html", categories=list_categories(db), **_results_context(db, params),
+        any_needs_review=db.execute("SELECT 1 FROM recipes WHERE needs_review = 1 LIMIT 1").fetchone() is not None,
+        any_needs_split=bool(needs_split_ids(db)),
     )
 
 
