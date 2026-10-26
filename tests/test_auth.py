@@ -58,3 +58,16 @@ def test_logout_revokes_access(protected_client):
 def test_no_password_means_fully_open(client):
     assert client.get("/recipes/new").status_code == 200
     assert client.get("/admin/").status_code == 200
+
+
+def test_login_ignores_offsite_next(protected_client):
+    resp = protected_client.post("/login", data={"password": "sesame", "next": "https://evil.example/"})
+    assert resp.headers["Location"] == "/"
+    resp = protected_client.post("/login", data={"password": "sesame", "next": "//evil.example/"})
+    assert resp.headers["Location"] == "/"
+
+
+def test_login_redirect_keeps_proxy_prefix(protected_client):
+    resp = protected_client.get("/recipes/new", headers={"X-Forwarded-Prefix": "/recipes"})
+    assert resp.status_code == 302
+    assert resp.headers["Location"] == "/recipes/login?next=/recipes/recipes/new"
