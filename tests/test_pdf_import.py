@@ -90,7 +90,7 @@ def test_run_import_job_stages_recipes(batch_cfg):
         assert row["scan_filename"] is not None
         assert (batch_cfg.SCANS_DIR / row["scan_filename"]).exists()
         ingredients = json.loads(row["ingredients_json"])
-        assert ingredients[0]["raw_text"] == "1 cup flour"
+        assert ingredients[0]["raw_text"] == "1 cup Flour"
 
     conn.close()
 

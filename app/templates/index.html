@@ -48,17 +48,27 @@
     </select>
 
     <label class="toggle-chip">
+      <input type="checkbox" name="favorites" value="1" {% if params.favorites %}checked{% endif %}>
+      Favorites
+    </label>
+    {# Worklist filters only appear while there's work left (or while switched on). #}
+    {% if any_needs_review or params.needs_review %}
+    <label class="toggle-chip">
       <input type="checkbox" name="needs_review" value="1" {% if params.needs_review %}checked{% endif %}>
       Needs review
     </label>
+    {% endif %}
+    {% if any_needs_split or params.needs_split %}
     <label class="toggle-chip" title="Recipes with ingredient lines not yet split into amount / unit / ingredient">
       <input type="checkbox" name="needs_split" value="1" {% if params.needs_split %}checked{% endif %}>
       Needs split
     </label>
-    <label class="toggle-chip">
-      <input type="checkbox" name="favorites" value="1" {% if params.favorites %}checked{% endif %}>
-      Favorites
-    </label>
+    {% endif %}
+
+    <button type="button" class="clear-filters" id="clear-filters"
+            {% if not (params.q or params.category_id or params.sort != 'name' or params.favorites or params.needs_review or params.needs_split) %}hidden{% endif %}>
+      {{ icon('x', 14) }}<span>Clear filters</span>
+    </button>
 
     <span class="results-count" id="results-count" aria-live="polite">{{ count_text }}</span>
   </div>
