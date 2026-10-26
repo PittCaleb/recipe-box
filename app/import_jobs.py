@@ -9,6 +9,7 @@ from datetime import datetime
 
 from app.claude_import import extract_recipes_from_page
 from app.db import get_connection
+from app.ingredients.textcase import title_case_ingredient
 from app.sanitize import sanitize_instructions
 from importer.crop_scans import crop_one
 from importer.render_pages import render_pdf
@@ -120,7 +121,10 @@ def _run(conn, cfg, batch_id, pdf_filename, default_contributor):
                     recipe.servings, recipe.prep_time, recipe.cook_time,
                     sanitize_instructions(recipe.instructions_html), recipe.proposed_category,
                     1 if recipe.needs_review else 0, review_note or None, scan_filename,
-                    json.dumps([i.model_dump() for i in recipe.ingredients]),
+                    json.dumps([
+                        {**i.model_dump(), "raw_text": title_case_ingredient(i.kind, i.raw_text)}
+                        for i in recipe.ingredients
+                    ]),
                     json.dumps(recipe.notes),
                 ),
             )
