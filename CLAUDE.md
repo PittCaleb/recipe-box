@@ -12,8 +12,8 @@ Read README.md (setup, configuration, people and permissions, PDF import), SPEC.
 - **Never commit `config.py`'s local change** (`RECIPES_PORT` default 5052; the committed default is 5050) or `.coverage`.
   When `config.py` has real changes: set the port back to 5050, `git add config.py`, then restore 5052.
 - **Deploying touches production.** Do it when Caleb says to ("go ahead and deploy"); the permission check blocks it otherwise.
-- **The NAS copy is the live data.** `data/` on the Mac is a stale snapshot from 2026-10-26. Never treat it as current or
-  copy it over the NAS.
+- **The NAS copy is the live data.** `data/` on the Mac is only a copy; refresh it with
+  `scripts/pull-live-data.sh` (stop the local app first). Never copy local data over the NAS.
 - Plain, friendly language in UI text and summaries. He tests on his phone (iPhone) as well as the Mac.
 
 ## Running and testing
