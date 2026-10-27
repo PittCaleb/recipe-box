@@ -86,7 +86,7 @@
       <input type="text" id="merged-title" name="title" value="{{ (recipes|selectattr('id', 'equalto', keep_id)|first).clean_title }}" required>
     </div>
     <p class="hint">
-      Carried over to the kept recipe: notes, favorite, latest made date, highest rating, and the photo if it has none.
+      Carried over to the kept recipe: notes, everyone&rsquo;s favorites, made dates, and ratings, and the photo if it has none.
       The importer's &ldquo;duplicate of&hellip;&rdquo; notes are dropped, and a note records where each merged copy came from.
     </p>
     <div class="dup-buttons">

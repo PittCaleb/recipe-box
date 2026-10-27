@@ -41,11 +41,38 @@ All settings are environment variables with sensible defaults; see `config.py`:
 | `RECIPES_DATA_DIR` | `./data` | All mutable data (db, images, scans, exports) |
 | `RECIPES_HOST` | `0.0.0.0` | Listen address |
 | `RECIPES_PORT` | `5050` | Port (5000 is taken by macOS AirPlay) |
-| `RECIPES_APP_PASSWORD` | unset | If set, editing and admin require login (viewing, printing, and exports stay open) |
+| `RECIPES_HOME_HOSTS` | `localhost,127.0.0.1` | Hostnames with no sign-in; visitors there act as the owner (user 1) |
+| `RECIPES_ACCESS_TEAM_DOMAIN` | unset | Cloudflare Access team domain, e.g. `yourteam.cloudflareaccess.com` |
+| `RECIPES_ACCESS_AUD` | unset | The Access application's Audience (AUD) tag |
 | `RECIPES_COOKBOOK_TITLE` | `Our Family Recipes` | Default cookbook cover title |
 | `ANTHROPIC_API_KEY` | unset | Required for **Admin → Import a new PDF** (see below) |
 | `RECIPES_IMPORT_MODEL` | `claude-opus-5-5` | Model used to transcribe uploaded PDFs |
 | `RECIPES_PDF_DIR` | `./pdf` | Where source and uploaded PDFs live |
+
+## People and permissions
+
+Everyone can read every recipe, print, share, and add new recipes. On top of that:
+
+| | Admin | A recipe's owner | Everyone else |
+|---|---|---|---|
+| Edit a recipe | any | their own | no |
+| Delete a recipe | yes | no | no |
+| Add a note, add or replace the photo | yes | yes | yes |
+| Delete a note | any | their own notes | their own notes |
+| Remove the photo | yes | yes | no |
+| Admin menu: import, duplicates, categories, needs review, export | yes | no | no |
+
+Favorites, ratings, and "I made this" are each person's own.
+
+Who someone is: through the public address, Cloudflare Access signs them in, and the app reads their email from the
+signed token Access adds to each request (checked against `RECIPES_ACCESS_TEAM_DOMAIN` and `RECIPES_ACCESS_AUD`). The
+first time someone new arrives they get a regular account. On a home address (`RECIPES_HOME_HOSTS`) there is no sign-in
+and everyone acts as user 1, the owner. Any other request without a valid token is refused.
+
+To make someone an admin (there's no screen for it yet):
+```sh
+sqlite3 data/recipes.db "UPDATE users SET is_admin = 1 WHERE email = 'them@example.com';"
+```
 
 ## Getting recipes from a PDF into the app
 

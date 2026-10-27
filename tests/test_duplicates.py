@@ -1,8 +1,7 @@
 import pytest
 
-from app import create_app
 from app.duplicates import find_duplicate_groups, ingredient_line_key, lines_match, merge_recipes
-from tests.conftest import seed_ingredient, seed_recipe, sync_fts
+from tests.conftest import seed_ingredient, seed_personal, seed_recipe, sync_fts
 
 BAKING = ["2 cups flour", "1 cup sugar", "2 eggs", "1 tsp baking powder", "1/2 cup butter", "1 tsp vanilla"]
 
@@ -13,6 +12,12 @@ def _recipe(db, title, ingredients=(), **kw):
         seed_ingredient(db, rid, pos, text)
     sync_fts(db, rid, title, ingredients_text=" ".join(ingredients))
     return rid
+
+
+def _personal(db, rid, user_id=1):
+    return db.execute(
+        "SELECT * FROM user_recipes WHERE recipe_id = ? AND user_id = ?", (rid, user_id)
+    ).fetchone()
 
 
 def _note(db, rid, body, created_at="2026-01-01T00:00:00"):
@@ -113,9 +118,10 @@ def test_merge_carries_over_history_and_notes(db):
 
     assert db.execute("SELECT COUNT(*) FROM recipes WHERE id=?", (other,)).fetchone()[0] == 0
     row = db.execute("SELECT * FROM recipes WHERE id=?", (keep,)).fetchone()
-    assert row["favorite"] == 1
-    assert row["rating"] == 5
-    assert row["last_made"] == "2026-03-01"
+    mine = _personal(db, keep)
+    assert mine["favorite"] == 1
+    assert mine["rating"] == 5
+    assert mine["last_made"] == "2026-03-01"
     assert row["image_filename"] == "photo.jpg"
     notes = _notes(db, keep)
     assert "From original card: makes double" in notes
@@ -129,8 +135,20 @@ def test_merge_keeps_better_values_already_on_keeper(db):
     other = _recipe(db, "Spatzle (recipes2 version)", rating=2, last_made="2024-01-01", image_filename="theirs.jpg")
     orphaned = merge_recipes(db, keep, [other])
     row = db.execute("SELECT * FROM recipes WHERE id=?", (keep,)).fetchone()
-    assert (row["favorite"], row["rating"], row["last_made"], row["image_filename"]) == (1, 5, "2026-05-01", "mine.jpg")
+    mine = _personal(db, keep)
+    assert (mine["favorite"], mine["rating"], mine["last_made"], row["image_filename"]) == (1, 5, "2026-05-01", "mine.jpg")
     assert ("image", "theirs.jpg") in orphaned
+
+
+def test_merge_keeps_each_persons_own_history(db):
+    db.execute("INSERT INTO users (id, email, display_name, created_at) VALUES (2, 'pat@example.com', 'Pat', '2026-01-01')")
+    keep = _recipe(db, "Fudge", favorite=1)
+    other = _recipe(db, "Fudge (recipes2 version)")
+    seed_personal(db, other, user_id=2, favorite=1, rating=4, last_made="2026-02-02")
+    merge_recipes(db, keep, [other])
+    assert _personal(db, keep, user_id=1)["favorite"] == 1
+    pats = _personal(db, keep, user_id=2)
+    assert (pats["favorite"], pats["rating"], pats["last_made"]) == (1, 4, "2026-02-02")
 
 
 def test_merge_renames_and_updates_search(client, db):
@@ -235,9 +253,5 @@ def test_merge_route_requires_something_to_merge(client, db):
     assert db.execute("SELECT COUNT(*) FROM recipes").fetchone()[0] == 2
 
 
-def test_duplicates_require_login_when_password_set(cfg, db):
-    cfg.APP_PASSWORD = "sesame"
-    client = create_app(cfg).test_client()
-    resp = client.get("/admin/duplicates/")
-    assert resp.status_code == 302
-    assert "/login" in resp.headers["Location"]
+def test_duplicates_are_admin_only(member, db):
+    assert member.get("/admin/duplicates/").status_code == 403

@@ -54,7 +54,7 @@ def test_backup_every_field_present_even_when_empty(db):
     text = build_backup_text(db)
     for field in [
         "RECIPE:", "ID:", "CATEGORY:", "CONTRIBUTOR:", "SOURCE:", "SERVINGS:",
-        "PREP TIME:", "COOK TIME:", "RATING:", "FAVORITE:", "LAST MADE:",
+        "PREP TIME:", "COOK TIME:", "OWNER:", "PERSONAL:",
         "NEEDS REVIEW:", "IMAGE FILE:", "SCAN FILE:", "ORIGIN:", "CREATED:", "UPDATED:",
     ]:
         assert field in text
@@ -126,9 +126,8 @@ def test_round_trip_matches_database(db):
     assert f["SERVINGS"] == row["servings"]
     assert f["PREP TIME"] == (row["prep_time"] or "")
     assert f["COOK TIME"] == row["cook_time"]
-    assert f["RATING"] == str(row["rating"])
-    assert f["FAVORITE"] == "yes"
-    assert f["LAST MADE"] == row["last_made"]
+    assert f["OWNER"] == "caleb@hail2pitt.org"
+    assert f["PERSONAL"] == "caleb@hail2pitt.org (favorite, 5 stars, made 2026-09-14)"
     assert f["NEEDS REVIEW"] == "no"
     assert f["IMAGE FILE"] == row["image_filename"]
     assert f["SCAN FILE"] == row["scan_filename"]
@@ -178,7 +177,6 @@ def test_round_trip_multiple_recipes_and_blank_fields(db):
     minimal = next(r for r in recipes if r["fields"]["RECIPE"] == "Minimal Recipe")
     assert minimal["fields"]["CATEGORY"] == ""
     assert minimal["fields"]["CONTRIBUTOR"] == ""
-    assert minimal["fields"]["RATING"] == ""
-    assert minimal["fields"]["FAVORITE"] == "no"
+    assert minimal["fields"]["PERSONAL"] == ""
     assert minimal["ingredients"] == []
     assert minimal["notes"] == []

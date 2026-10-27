@@ -334,16 +334,10 @@ def test_discard_removes_batch_and_scan_files(client, db, batch_cfg):
     assert not (batch_cfg.SCANS_DIR / "batch1-p001-a.jpg").exists()
 
 
-# --- Auth gating ---
+# --- Permissions ---
 
-def test_import_requires_login_when_password_set(cfg):
-    from app import create_app
-    cfg.APP_PASSWORD = "sesame"
-    app = create_app(cfg)
-    client = app.test_client()
-    resp = client.get("/admin/import/")
-    assert resp.status_code == 302
-    assert "/login" in resp.headers["Location"]
+def test_import_is_admin_only(member):
+    assert member.get("/admin/import/").status_code == 403
 
 
 def test_api_image_is_resized_jpeg_under_the_limit(tmp_path):
