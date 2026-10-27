@@ -185,8 +185,8 @@ def merge_recipes(conn, keep_id, merge_ids, new_title=None):
 
     Carried over to the kept recipe: notes (except the importer's own
     review notes, which only described the duplication being resolved),
-    favorite, the most recent last-made date, the higher rating, and the
-    photo if the kept recipe has none. Each removed copy also leaves a note
+    each person's favorite, most recent last-made date, and higher rating,
+    and the photo if the kept recipe has none. Each removed copy also leaves a note
     saying where it came from, so the provenance isn't lost.
 
     Returns the image/scan filenames of the deleted rows that are no longer
@@ -201,20 +201,21 @@ def merge_recipes(conn, keep_id, merge_ids, new_title=None):
     if any(o is None for o in others):
         raise ValueError("one of the recipes to merge no longer exists")
 
-    favorite = keep["favorite"]
-    last_made = keep["last_made"]
-    rating = keep["rating"]
     image = keep["image_filename"]
     orphaned_files = []
     now = _now()
 
     with conn:
         for o in others:
-            favorite = favorite or o["favorite"]
-            if o["last_made"] and (not last_made or o["last_made"] > last_made):
-                last_made = o["last_made"]
-            if o["rating"] and (not rating or o["rating"] > rating):
-                rating = o["rating"]
+            conn.execute(
+                """INSERT INTO user_recipes (user_id, recipe_id, favorite, rating, last_made)
+                   SELECT user_id, ?, favorite, rating, last_made FROM user_recipes WHERE recipe_id = ?
+                   ON CONFLICT (user_id, recipe_id) DO UPDATE SET
+                     favorite = max(favorite, excluded.favorite),
+                     rating = NULLIF(max(COALESCE(rating, 0), COALESCE(excluded.rating, 0)), 0),
+                     last_made = NULLIF(max(COALESCE(last_made, ''), COALESCE(excluded.last_made, '')), '')""",
+                (keep_id, o["id"]),
+            )
             if o["image_filename"] and not image:
                 image = o["image_filename"]
             elif o["image_filename"]:
@@ -231,17 +232,17 @@ def merge_recipes(conn, keep_id, merge_ids, new_title=None):
                 origin = f" ({o['source_pdf']} page {o['source_page']})"
             contributor = f", credited to {o['contributor']}" if o["contributor"] else ""
             conn.execute(
-                "INSERT INTO notes (recipe_id, body, created_at) VALUES (?, ?, ?)",
-                (keep_id, f"Merged in a duplicate copy: \"{o['title']}\"{origin}{contributor}.", now),
+                "INSERT INTO notes (recipe_id, body, created_at, author_id) VALUES (?, ?, ?, ?)",
+                (keep_id, f"Merged in a duplicate copy: \"{o['title']}\"{origin}{contributor}.", now,
+                 keep["owner_id"]),
             )
             conn.execute("DELETE FROM recipes_fts WHERE rowid = ?", (o["id"],))
             conn.execute("DELETE FROM recipes WHERE id = ?", (o["id"],))
 
         title = (new_title or "").strip() or keep["title"]
         conn.execute(
-            "UPDATE recipes SET title = ?, favorite = ?, last_made = ?, rating = ?, "
-            "image_filename = ?, updated_at = ? WHERE id = ?",
-            (title, favorite, last_made, rating, image, now, keep_id),
+            "UPDATE recipes SET title = ?, image_filename = ?, updated_at = ? WHERE id = ?",
+            (title, image, now, keep_id),
         )
 
         # The importer's "duplicate of X" notes on the keeper are resolved now.

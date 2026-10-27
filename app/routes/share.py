@@ -4,6 +4,7 @@ from app import get_db
 from app.models.recipes import get_recipe
 from app.rendering.image import render_recipe_png
 from app.rendering.pdf import render_recipe_pdf
+from app.users import current_user
 
 bp = Blueprint("share", __name__, url_prefix="/recipes")
 
@@ -13,7 +14,7 @@ def _cfg():
 
 
 def _get_or_404(db, recipe_id):
-    data = get_recipe(db, recipe_id)
+    data = get_recipe(db, recipe_id, current_user()["id"])
     if data is None:
         abort(404)
     return data

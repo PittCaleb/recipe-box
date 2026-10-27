@@ -84,10 +84,10 @@ def test_favorite_toggle(client, db):
     rid = _make_recipe(db, title="Toggle Me")
     resp = client.post(f"/recipes/{rid}/favorite", follow_redirects=True)
     assert resp.status_code == 200
-    row = db.execute("SELECT favorite FROM recipes WHERE id=?", (rid,)).fetchone()
+    row = db.execute("SELECT favorite FROM user_recipes WHERE recipe_id=? AND user_id=1", (rid,)).fetchone()
     assert row["favorite"] == 1
     client.post(f"/recipes/{rid}/favorite")
-    row = db.execute("SELECT favorite FROM recipes WHERE id=?", (rid,)).fetchone()
+    row = db.execute("SELECT favorite FROM user_recipes WHERE recipe_id=? AND user_id=1", (rid,)).fetchone()
     assert row["favorite"] == 0
 
 
@@ -95,7 +95,7 @@ def test_mark_made_sets_today(client, db):
     import datetime
     rid = _make_recipe(db, title="Make Me")
     client.post(f"/recipes/{rid}/made")
-    row = db.execute("SELECT last_made FROM recipes WHERE id=?", (rid,)).fetchone()
+    row = db.execute("SELECT last_made FROM user_recipes WHERE recipe_id=? AND user_id=1", (rid,)).fetchone()
     assert row["last_made"] == datetime.date.today().isoformat()
 
 

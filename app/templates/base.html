@@ -13,10 +13,8 @@
     <div class="site-header-inner">
       <a class="site-title" href="{{ url_for('browse.index') }}">Recipes</a>
       <nav class="site-nav">
-        {% if is_authenticated %}
+        {% if current_user %}
           {% include "partials/_user_menu.html" %}
-        {% elif login_required %}
-          <a class="header-link" href="{{ url_for('auth.login') }}">Log in</a>
         {% endif %}
       </nav>
     </div>

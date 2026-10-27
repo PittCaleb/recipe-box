@@ -81,7 +81,7 @@ recipes/
 | `RECIPES_HOST` | `0.0.0.0` | Listen on the LAN |
 | `RECIPES_PORT` | `5050` | Avoid 5000, which macOS AirPlay uses |
 | `RECIPES_SHARE_BACKEND` | `mac` on macOS, else `none` | `mac`, `smtp` (future), or `none` |
-| `RECIPES_APP_PASSWORD` | unset | If set, editing, admin, and sharing require a simple session login. If unset, the app is fully open. |
+| `RECIPES_HOME_HOSTS`, `RECIPES_ACCESS_TEAM_DOMAIN`, `RECIPES_ACCESS_AUD` | see README | Who is visiting; see README → People and permissions. |
 | `RECIPES_COOKBOOK_TITLE` | `Our Family Recipes` | Default cookbook cover title |
 
 On startup, `run.py` prints both `http://localhost:PORT` and `http://<mac-lan-ip>:PORT`.
@@ -185,7 +185,7 @@ This is a separate step that runs before the web app is built. Its output is a p
 Shows the title, category, contributor, source, servings and times, image, ingredients (headings styled distinctly), instructions (rich text), last made, and notes newest-first with date stamps. Empty fields are hidden entirely. A small "Needs review" badge appears when the flag is set.
 
 Action buttons (they should collapse sensibly on mobile):
-- **I made this:** sets `last_made` to today, with a one-tap confirmation. The date stays editable in edit mode.
+- **I made this:** sets your own last-made date to today, with a one-tap confirmation. Favorites, ratings (the stars under the title), and last made are per person.
 - **Add note:** a textarea modal. The note is saved with an automatic timestamp.
 - **Add image / Replace image:** see 6.6.
 - **Adjust:** only shown when the recipe is scalable. See 6.5.
@@ -198,7 +198,7 @@ Action buttons (they should collapse sensibly on mobile):
 - **Favorite toggle**
 
 ### 6.3 Edit mode and new recipe
-- Every field is editable: title, category (dropdown), contributor (free text), source, servings, times, rating, favorite, needs_review checkbox, last made (date picker), and instructions.
+- Every field is editable: title, category (dropdown), contributor (free text), source, servings, times, needs_review checkbox (admins only), and instructions. Only the recipe's owner or an admin can edit it.
 - **Instructions** use Quill with a minimal toolbar: Bold, Italic, Bulleted list, Numbered list, Clear formatting. The owner's main use will be selecting scanned block text and converting it to a list. The HTML is sanitized server-side before saving.
 - **Ingredient editor:** one row per ingredient, showing its raw text.
   - Rows can be added, deleted, and reordered with up/down buttons (these work on touch). Rows can be toggled between item and heading.
