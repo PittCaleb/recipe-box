@@ -24,8 +24,16 @@ ssh cohenc@mockingnas.local /share/Container/mockingnas/dc.sh ps                
 ```
 
 Data on the NAS: `/share/Container/mockingnas/data/recipes/` (recipes.db, images/, scans/, import/, pdf/). Copy files over with `rsync`
-(not `scp`). Secrets (Anthropic key, `RECIPES_SECRET_KEY`) are in `/share/Container/mockingnas/env/recipes.env`; edit that and
+(not `scp`). Secrets and settings (Anthropic key, `RECIPES_SECRET_KEY`, `RECIPES_HOME_HOSTS`, the Access team domain and AUD) are in `/share/Container/mockingnas/env/recipes.env`; edit that and
 restart to change them. Migrations run by themselves when the container starts. Setup and adding apps: mockingnas-dash's TODO.md.
+
+## User management
+
+Right now anyone who gets past Cloudflare Access becomes a regular user automatically, and admins are set by hand in the
+database (README → People and permissions). A real version would need: a users page for admins (list, promote/demote,
+rename the display name, disable someone); deciding whether new sign-ins should wait for approval instead of being
+auto-created; letting people set their own display name; transferring a recipe's ownership; and what happens to a
+person's recipes, notes, and favorites if they're removed.
 
 ## Recipe image export — confirm in a real browser
 

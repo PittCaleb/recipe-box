@@ -64,8 +64,8 @@ def load(force=False):
                 """INSERT INTO recipes
                    (title, category_id, contributor, source, servings, prep_time, cook_time,
                     instructions_html, scan_filename, source_pdf, source_page,
-                    needs_review, favorite, created_at, updated_at)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)""",
+                    needs_review, owner_id, created_at, updated_at)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)""",
                 (
                     r["title"], category_id, r["contributor"] or None, r["source"] or None,
                     r["servings"] or None, r["prep_time"] or None, r["cook_time"] or None,
@@ -88,7 +88,7 @@ def load(force=False):
 
             for note_body in notes_text:
                 conn.execute(
-                    "INSERT INTO notes (recipe_id, body, created_at) VALUES (?, ?, ?)",
+                    "INSERT INTO notes (recipe_id, body, created_at, author_id) VALUES (?, ?, ?, 1)",
                     (recipe_id, note_body, now),
                 )
 
