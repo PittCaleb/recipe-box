@@ -3,7 +3,9 @@
   const results = document.getElementById("results");
   if (!form || !results) return;
 
-  const STATE_KEY = "recipes.browseQuery";
+  // Renamed when the default view became Text by category, so browsers
+  // that remembered the old Cards / A–Z default start fresh once.
+  const STATE_KEY = "recipes.browseQuery.v2";
 
   function currentQuery() {
     return new URLSearchParams(new FormData(form)).toString();
@@ -11,15 +13,7 @@
 
   function readState() {
     try {
-      const stored = localStorage.getItem(STATE_KEY);
-      if (stored !== null) return stored;
-      // Older versions only remembered the view style; carry that over.
-      const legacy = new URLSearchParams();
-      ["display", "group"].forEach((kind) => {
-        const value = localStorage.getItem(`recipes.${kind}`);
-        if (value) legacy.set(kind, value);
-      });
-      return legacy.toString() || null;
+      return localStorage.getItem(STATE_KEY);
     } catch (e) {
       return null;
     }
