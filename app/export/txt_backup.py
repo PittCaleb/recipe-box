@@ -126,6 +126,29 @@ def _ingredient_line(ing):
     return f"- {ing['raw_text']}"
 
 
+def _personal_summary(conn, recipe_id):
+    """Everyone's own favorite / rating / last made, on one line:
+    "a@x.com (favorite, 5 stars, made 2026-09-14); b@y.com (favorite)"."""
+    rows = conn.execute(
+        """SELECT u.email, ur.favorite, ur.rating, ur.last_made
+           FROM user_recipes ur JOIN users u ON u.id = ur.user_id
+           WHERE ur.recipe_id = ? ORDER BY u.id""",
+        (recipe_id,),
+    ).fetchall()
+    people = []
+    for r in rows:
+        parts = []
+        if r["favorite"]:
+            parts.append("favorite")
+        if r["rating"]:
+            parts.append(f"{r['rating']} star{'s' if r['rating'] != 1 else ''}")
+        if r["last_made"]:
+            parts.append(f"made {r['last_made']}")
+        if parts:
+            people.append(f"{r['email']} ({', '.join(parts)})")
+    return "; ".join(people)
+
+
 def _recipe_block(conn, recipe):
     ingredients = conn.execute(
         "SELECT * FROM ingredients WHERE recipe_id = ? ORDER BY position", (recipe["id"],)
@@ -149,9 +172,8 @@ def _recipe_block(conn, recipe):
         f"SERVINGS: {recipe['servings'] or ''}",
         f"PREP TIME: {recipe['prep_time'] or ''}",
         f"COOK TIME: {recipe['cook_time'] or ''}",
-        f"RATING: {recipe['rating'] if recipe['rating'] is not None else ''}",
-        f"FAVORITE: {'yes' if recipe['favorite'] else 'no'}",
-        f"LAST MADE: {recipe['last_made'] or ''}",
+        f"OWNER: {recipe['owner_email'] or ''}",
+        f"PERSONAL: {_personal_summary(conn, recipe['id'])}",
         f"NEEDS REVIEW: {'yes' if recipe['needs_review'] else 'no'}",
         f"IMAGE FILE: {recipe['image_filename'] or ''}",
         f"SCAN FILE: {recipe['scan_filename'] or ''}",
@@ -176,8 +198,10 @@ def _recipe_block(conn, recipe):
 
 def build_backup_text(conn):
     recipes = conn.execute(
-        """SELECT r.*, c.name AS category_name
-           FROM recipes r LEFT JOIN categories c ON c.id = r.category_id
+        """SELECT r.*, c.name AS category_name, u.email AS owner_email
+           FROM recipes r
+           LEFT JOIN categories c ON c.id = r.category_id
+           LEFT JOIN users u ON u.id = r.owner_id
            ORDER BY COALESCE(c.name, '~'), r.title COLLATE NOCASE"""
     ).fetchall()
 

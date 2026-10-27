@@ -3,7 +3,6 @@ import re
 
 import pytest
 
-from app import create_app
 from app.ingredients.parser import parse_ingredient
 from app.ingredients.scaling import MULTIPLIER_STOPS
 from app.shopping import shopping_entry, shopping_list, shopping_name
@@ -135,9 +134,8 @@ def test_setup_modal_and_help_link_present(client, db):
     assert "/help/shopping-list" in html
 
 
-def test_help_page_open_without_login(cfg, db):
-    cfg.APP_PASSWORD = "sesame"
-    resp = create_app(cfg).test_client().get("/help/shopping-list")
+def test_help_page_open_to_everyone(member, db):
+    resp = member.get("/help/shopping-list")
     assert resp.status_code == 200
     assert b"Add to Shopping List" in resp.data
     assert b"Split Text" in resp.data

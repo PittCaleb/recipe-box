@@ -8,6 +8,7 @@ from app import get_db
 from app.import_jobs import start_import_job
 from app.models.categories import add_category, list_categories
 from app.models.recipes import save_recipe
+from app.users import current_user
 
 bp = Blueprint("import_pdf", __name__, url_prefix="/admin/import")
 
@@ -140,6 +141,7 @@ def commit(batch_id):
             "cook_time": r["cook_time"],
             "instructions_html": r["instructions_html"],
             "needs_review": r["needs_review"],
+            "owner_id": current_user()["id"],
         }
         ingredients = json.loads(r["ingredients_json"])
         recipe_id = save_recipe(db, None, fields, ingredients)
@@ -148,8 +150,8 @@ def commit(batch_id):
         now = datetime.now().isoformat(timespec="seconds")
         for note_body in notes:
             db.execute(
-                "INSERT INTO notes (recipe_id, body, created_at) VALUES (?, ?, ?)",
-                (recipe_id, note_body, now),
+                "INSERT INTO notes (recipe_id, body, created_at, author_id) VALUES (?, ?, ?, ?)",
+                (recipe_id, note_body, now, current_user()["id"]),
             )
 
         if r["scan_filename"]:

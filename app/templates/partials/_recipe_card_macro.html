@@ -16,7 +16,7 @@
       {% if r['category_name'] %}<span>{{ r['category_name'] }}</span>{% endif %}
       {% if r['last_made'] %}<span>Last made {{ r['last_made']|fmtdate }}</span>{% endif %}
     </p>
-    {% if r['needs_review'] %}<span class="badge badge-review">Needs review</span>{% endif %}
+    {% if is_admin and r['needs_review'] %}<span class="badge badge-review">Needs review</span>{% endif %}
   </div>
 </a>
 {% endmacro %}

@@ -11,14 +11,26 @@
       {% if recipe['category_name'] %}<span class="recipe-meta-item">{{ recipe['category_name'] }}</span>{% endif %}
       {% if recipe['contributor'] %}<span class="recipe-meta-item">By {{ recipe['contributor'] }}</span>{% endif %}
       {% if recipe['source'] %}<span class="recipe-meta-item">Source: {{ recipe['source'] }}</span>{% endif %}
+      {% if recipe['owner_name'] %}<span class="recipe-meta-item">Added by {{ recipe['owner_name'] }}</span>{% endif %}
     </p>
     <p class="recipe-meta">
       {% if recipe['servings'] %}<span class="recipe-meta-item">Servings: {{ recipe['servings'] }}</span>{% endif %}
       {% if recipe['prep_time'] %}<span class="recipe-meta-item">Prep: {{ recipe['prep_time'] }}</span>{% endif %}
       {% if recipe['cook_time'] %}<span class="recipe-meta-item">Cook: {{ recipe['cook_time'] }}</span>{% endif %}
     </p>
-    {% if recipe['needs_review'] %}<span class="badge badge-review">Needs review</span>{% endif %}
-    {% if recipe['last_made'] %}<p class="recipe-last-made">Last made {{ recipe['last_made']|fmtdate }}</p>{% endif %}
+    {% if is_admin and recipe['needs_review'] %}<span class="badge badge-review">Needs review</span>{% endif %}
+    {% if recipe['last_made'] %}<p class="recipe-last-made">You last made this {{ recipe['last_made']|fmtdate }}</p>{% endif %}
+    <form method="post" action="{{ url_for('recipe.rating', recipe_id=recipe['id']) }}" class="rating-stars no-print"
+          aria-label="Your rating">
+      {% for n in range(1, 6) %}
+      <button type="submit" name="rating" value="{{ n }}"
+              class="rating-star {% if recipe['rating'] and n <= recipe['rating'] %}is-on{% endif %}"
+              aria-pressed="{{ 'true' if recipe['rating'] == n else 'false' }}"
+              aria-label="{{ 'Clear your rating' if recipe['rating'] == n else 'Rate ' ~ n ~ ' star' ~ ('s' if n != 1 else '') }}">
+        {{ icon('star-filled' if recipe['rating'] and n <= recipe['rating'] else 'star', 20) }}
+      </button>
+      {% endfor %}
+    </form>
   </header>
 
   {% if recipe['image_filename'] %}
@@ -51,12 +63,14 @@
       <button type="button" class="icon-btn" data-open-modal="scan-modal" aria-label="View original scan">{{ icon('image') }}</button>
       {% endif %}
     </div>
-    {% if is_authenticated %}
+    {% if can_edit_recipe(recipe) %}
     <div class="action-group action-group--end">
       <a class="icon-btn" href="{{ url_for('edit.edit', recipe_id=recipe['id']) }}" aria-label="Edit">{{ icon('pencil') }}</a>
+      {% if can_delete_recipe() %}
       <form method="post" action="{{ url_for('edit.delete', recipe_id=recipe['id']) }}" class="inline-form" data-confirm="Delete this recipe permanently? This cannot be undone.">
         <button type="submit" class="icon-btn icon-btn--danger" aria-label="Delete recipe">{{ icon('trash') }}</button>
       </form>
+      {% endif %}
     </div>
     {% endif %}
   </div>
@@ -120,11 +134,13 @@
     <ul class="note-list">
       {% for n in notes %}
       <li class="note">
-        <span class="note-date">{{ n['created_at']|fmtdate }}</span>
+        <span class="note-date">{{ n['created_at']|fmtdate }}{% if n['author_name'] %} &middot; {{ n['author_name'] }}{% endif %}</span>
         <p class="note-body">{{ n['body'] }}</p>
+        {% if can_delete_note(n) %}
         <form method="post" action="{{ url_for('recipe.delete_note_route', recipe_id=recipe['id'], note_id=n['id']) }}" class="inline-form no-print" data-confirm="Delete this note?">
           <button type="submit" class="link-button">Delete</button>
         </form>
+        {% endif %}
       </li>
       {% endfor %}
     </ul>
@@ -156,7 +172,7 @@
         <button type="submit" class="btn btn-primary">Save</button>
       </div>
     </form>
-    {% if recipe['image_filename'] %}
+    {% if recipe['image_filename'] and can_edit_recipe(recipe) %}
     <form method="post" action="{{ url_for('edit.remove_image', recipe_id=recipe['id']) }}" data-confirm="Remove this recipe's image?">
       <button type="submit" class="link-button">Remove image</button>
     </form>

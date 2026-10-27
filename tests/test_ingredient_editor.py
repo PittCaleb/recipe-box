@@ -47,7 +47,7 @@ def test_parse_amount(text, value):
 # --- Split is the source of truth ---
 
 def test_save_rebuilds_text_from_split_fields(db):
-    rid = save_recipe(db, None, {"title": "Mousse", "instructions_html": ""}, [
+    rid = save_recipe(db, None, {"title": "Mousse", "instructions_html": "", "owner_id": 1}, [
         {"kind": "item", "raw_text": "4 sq. semisweet chocolate", "is_split": 1,
          "quantity": 2.0, "unit": "oz", "item": "semisweet chocolate squares", "no_scale": 0},
     ])
@@ -55,7 +55,7 @@ def test_save_rebuilds_text_from_split_fields(db):
 
 
 def test_recipe_page_and_search_show_the_split_not_the_old_line(client, db):
-    rid = save_recipe(db, None, {"title": "Mousse", "instructions_html": ""}, [
+    rid = save_recipe(db, None, {"title": "Mousse", "instructions_html": "", "owner_id": 1}, [
         {"kind": "item", "raw_text": "4 sq. semisweet chocolate", "is_split": 1,
          "quantity": 2.0, "unit": "oz", "item": "semisweet chocolate squares", "no_scale": 0},
     ])
@@ -202,8 +202,7 @@ def _bad_save_form(title="Hand Typed", **extra):
     data = _form([("item", "", "0", "", "", "salt (optional)", "0")], title=title)
     data.update({
         "contributor": "Aunt Bea", "source": "Notebook", "servings": "4",
-        "prep_time": "10 min", "cook_time": "20 min", "rating": "4", "last_made": "2026-10-01",
-        "favorite": "1",
+        "prep_time": "10 min", "cook_time": "20 min",
         "instructions_html": "<p>Whisk <strong>gently</strong> for ten minutes.</p><script>x()</script>",
     })
     data.update(extra)
@@ -215,12 +214,11 @@ def test_failed_new_recipe_keeps_every_field(client, db):
     assert resp.status_code == 400
     html = resp.data.decode()
     for expected in ('value="Hand Typed"', 'value="Aunt Bea"', 'value="Notebook"', 'value="4"',
-                     'value="10 min"', 'value="20 min"', 'value="2026-10-01"',
+                     'value="10 min"', 'value="20 min"',
                      "<p>Whisk <strong>gently</strong> for ten minutes.</p>",
                      'value="salt (optional)"', "leave it blank if there"):
         assert expected in html, expected
     assert "<script>x()</script>" not in html
-    assert 'name="favorite" value="1" checked' in html
     assert db.execute("SELECT COUNT(*) FROM recipes").fetchone()[0] == 0
 
 
