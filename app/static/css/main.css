@@ -103,6 +103,16 @@ button {
   display: flex;
   align-items: center;
   gap: 0.25rem;
+  min-width: 0;
+}
+
+.site-welcome {
+  margin-right: 0.5rem;
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .header-link {
@@ -207,13 +217,6 @@ button {
   height: 1px;
   margin: 0.35rem 0.5rem;
   background: var(--color-border);
-}
-
-.user-menu-who {
-  margin: 0;
-  padding: 0.4rem 0.75rem;
-  font-size: 0.85rem;
-  color: var(--color-text-muted);
 }
 
 /* ---------- Layout ---------- */
