@@ -34,35 +34,42 @@ def _fts_match_query(q):
     return " ".join(f'"{t}"*' for t in tokens)
 
 
+# Each person's own favorite / rating / last made, joined onto recipe rows
+# under the column names the templates use.
+PERSONAL_COLUMNS = "COALESCE(ur.favorite, 0) AS favorite, ur.rating AS rating, ur.last_made AS last_made"
+PERSONAL_JOIN = "LEFT JOIN user_recipes ur ON ur.recipe_id = r.id AND ur.user_id = ?"
+
 SORT_OPTIONS = {
     "name": "r.title COLLATE NOCASE ASC",
-    "recent_made": "r.last_made IS NULL, r.last_made DESC",
+    "recent_made": "ur.last_made IS NULL, ur.last_made DESC",
     "recent_added": "r.created_at DESC",
     "category": "c.id IS NULL, c.sort_order, c.name COLLATE NOCASE, r.title COLLATE NOCASE ASC",
 }
 
 
 def search_recipes(conn, q="", category_id=None, sort="name", needs_review=False, favorites=False,
-                   needs_split=False, rank_by_relevance=True):
+                   needs_split=False, rank_by_relevance=True, user_id=None):
     sort_sql = SORT_OPTIONS.get(sort, SORT_OPTIONS["name"])
     where = []
-    params = []
+    params = [user_id]
 
     match = _fts_match_query(q) if q else None
     if match:
-        base = """
-            SELECT r.*, c.name AS category_name
+        base = f"""
+            SELECT r.*, c.name AS category_name, {PERSONAL_COLUMNS}
             FROM recipes_fts f
             JOIN recipes r ON r.id = f.rowid
             LEFT JOIN categories c ON c.id = r.category_id
+            {PERSONAL_JOIN}
             WHERE recipes_fts MATCH ?
         """
         params.append(match)
     else:
-        base = """
-            SELECT r.*, c.name AS category_name
+        base = f"""
+            SELECT r.*, c.name AS category_name, {PERSONAL_COLUMNS}
             FROM recipes r
             LEFT JOIN categories c ON c.id = r.category_id
+            {PERSONAL_JOIN}
             WHERE 1=1
         """
 
@@ -72,7 +79,7 @@ def search_recipes(conn, q="", category_id=None, sort="name", needs_review=False
     if needs_review:
         where.append("r.needs_review = 1")
     if favorites:
-        where.append("r.favorite = 1")
+        where.append("ur.favorite = 1")
     if needs_split:
         ids = sorted(needs_split_ids(conn))
         where.append(f"r.id IN ({','.join('?' * len(ids))})" if ids else "0")
@@ -122,12 +129,17 @@ def group_recipes(rows, group_by):
     return sections
 
 
-def get_recipe(conn, recipe_id):
+def get_recipe(conn, recipe_id, user_id=None):
+    """The recipe with its ingredients and notes. Favorite, rating, and last
+    made are `user_id`'s own."""
     row = conn.execute(
-        """SELECT r.*, c.name AS category_name
-           FROM recipes r LEFT JOIN categories c ON c.id = r.category_id
+        f"""SELECT r.*, c.name AS category_name, o.display_name AS owner_name, {PERSONAL_COLUMNS}
+           FROM recipes r
+           LEFT JOIN categories c ON c.id = r.category_id
+           LEFT JOIN users o ON o.id = r.owner_id
+           {PERSONAL_JOIN}
            WHERE r.id = ?""",
-        (recipe_id,),
+        (user_id, recipe_id),
     ).fetchone()
     if row is None:
         return None
@@ -135,7 +147,10 @@ def get_recipe(conn, recipe_id):
         "SELECT * FROM ingredients WHERE recipe_id = ? ORDER BY position", (recipe_id,)
     ).fetchall()
     notes = conn.execute(
-        "SELECT * FROM notes WHERE recipe_id = ? ORDER BY created_at DESC, id DESC", (recipe_id,)
+        """SELECT n.*, u.display_name AS author_name
+           FROM notes n LEFT JOIN users u ON u.id = n.author_id
+           WHERE n.recipe_id = ? ORDER BY n.created_at DESC, n.id DESC""",
+        (recipe_id,),
     ).fetchall()
     return {
         "recipe": row,
@@ -160,33 +175,47 @@ def is_scalable(ingredients):
     return any_split
 
 
-def toggle_favorite(conn, recipe_id):
+def _set_personal(conn, user_id, recipe_id, column, value_sql, params=()):
+    """Sets one of the user's own columns for a recipe; `value_sql` may refer
+    to the column's current value."""
     with conn:
         conn.execute(
-            "UPDATE recipes SET favorite = CASE favorite WHEN 1 THEN 0 ELSE 1 END, updated_at = ? WHERE id = ?",
-            (_now(), recipe_id),
+            "INSERT OR IGNORE INTO user_recipes (user_id, recipe_id) VALUES (?, ?)",
+            (user_id, recipe_id),
+        )
+        conn.execute(
+            f"UPDATE user_recipes SET {column} = {value_sql} WHERE user_id = ? AND recipe_id = ?",
+            (*params, user_id, recipe_id),
         )
 
 
-def mark_made_today(conn, recipe_id):
+def toggle_favorite(conn, user_id, recipe_id):
+    _set_personal(conn, user_id, recipe_id, "favorite", "1 - favorite")
+
+
+def mark_made_today(conn, user_id, recipe_id):
     today = date.today().isoformat()
-    with conn:
-        conn.execute(
-            "UPDATE recipes SET last_made = ?, updated_at = ? WHERE id = ?",
-            (today, _now(), recipe_id),
-        )
+    _set_personal(conn, user_id, recipe_id, "last_made", "?", (today,))
     return today
 
 
-def add_note(conn, recipe_id, body):
+def set_rating(conn, user_id, recipe_id, rating):
+    """Rating the same as the current one clears it."""
+    _set_personal(
+        conn, user_id, recipe_id, "rating",
+        "CASE WHEN rating = ? THEN NULL ELSE ? END", (rating, rating),
+    )
+
+
+def add_note(conn, recipe_id, body, author_id):
     body = body.strip()
     if not body:
         return None
     now = _now()
     with conn:
         cur = conn.execute(
-            "INSERT INTO notes (recipe_id, body, created_at) VALUES (?, ?, ?)",
-            (recipe_id, body, now),
+            "INSERT INTO notes (recipe_id, body, created_at, author_id) VALUES (?, ?, ?, ?)",
+            (recipe_id, body, now, author_id),
         )
         conn.execute("UPDATE recipes SET updated_at = ? WHERE id = ?", (now, recipe_id))
     return cur.lastrowid
@@ -237,8 +266,8 @@ def normalize_ingredient(ing):
 
 
 def save_recipe(conn, recipe_id, fields, ingredients):
-    """Create (recipe_id is None) or update a recipe plus its full ingredient list,
-    in one transaction. `ingredients` is a list of dicts with keys matching the
+    """Create (recipe_id is None, owned by fields["owner_id"]) or update a
+    recipe plus its full ingredient list, in one transaction. `ingredients` is a list of dicts with keys matching the
     ingredients table (kind, raw_text, no_scale, is_split, quantity, quantity_max,
     unit, item)."""
     now = _now()
@@ -249,15 +278,13 @@ def save_recipe(conn, recipe_id, fields, ingredients):
             cur = conn.execute(
                 """INSERT INTO recipes
                    (title, category_id, contributor, source, servings, prep_time, cook_time,
-                    instructions_html, needs_review, favorite, rating, last_made,
-                    created_at, updated_at)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                    instructions_html, needs_review, owner_id, created_at, updated_at)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                 (
                     fields["title"], fields.get("category_id"), fields.get("contributor"),
                     fields.get("source"), fields.get("servings"), fields.get("prep_time"),
                     fields.get("cook_time"), fields["instructions_html"],
-                    fields.get("needs_review", 0), fields.get("favorite", 0),
-                    fields.get("rating"), fields.get("last_made"), now, now,
+                    fields.get("needs_review", 0), fields["owner_id"], now, now,
                 ),
             )
             recipe_id = cur.lastrowid
@@ -265,15 +292,13 @@ def save_recipe(conn, recipe_id, fields, ingredients):
             conn.execute(
                 """UPDATE recipes SET
                    title=?, category_id=?, contributor=?, source=?, servings=?, prep_time=?,
-                   cook_time=?, instructions_html=?, needs_review=?, favorite=?, rating=?,
-                   last_made=?, updated_at=?
+                   cook_time=?, instructions_html=?, needs_review=?, updated_at=?
                    WHERE id=?""",
                 (
                     fields["title"], fields.get("category_id"), fields.get("contributor"),
                     fields.get("source"), fields.get("servings"), fields.get("prep_time"),
                     fields.get("cook_time"), fields["instructions_html"],
-                    fields.get("needs_review", 0), fields.get("favorite", 0),
-                    fields.get("rating"), fields.get("last_made"), now, recipe_id,
+                    fields.get("needs_review", 0), now, recipe_id,
                 ),
             )
             conn.execute("DELETE FROM ingredients WHERE recipe_id = ?", (recipe_id,))

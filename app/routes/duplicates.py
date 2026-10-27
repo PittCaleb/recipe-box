@@ -92,6 +92,11 @@ def compare():
             "SELECT body, created_at FROM notes WHERE recipe_id = ? ORDER BY created_at, id", (rid,)
         ).fetchall()
         recipe["clean_title"] = clean_title(recipe["title"])
+        # Across everyone: does anybody love it, when was it last made, best rating.
+        recipe.update(dict(db.execute(
+            "SELECT MAX(favorite) AS favorite, MAX(last_made) AS last_made, MAX(rating) AS rating "
+            "FROM user_recipes WHERE recipe_id = ?", (rid,),
+        ).fetchone()))
         recipes.append(recipe)
 
     # Mark ingredient lines with no equivalent in some other copy, so real

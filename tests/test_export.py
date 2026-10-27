@@ -2,7 +2,6 @@ import io
 
 from PIL import Image
 
-from app import create_app
 from tests.conftest import seed_ingredient, seed_recipe, sync_fts
 
 
@@ -81,10 +80,9 @@ def test_email_and_text_routes_are_gone(client, db, cfg):
     assert client.post(f"/recipes/{rid}/text").status_code in (404, 405)
 
 
-def test_exports_do_not_require_login(cfg, db):
-    cfg.APP_PASSWORD = "sesame"
+def test_exports_open_to_everyone(member, cfg, db):
     cfg.ensure_data_dirs()
-    client = create_app(cfg).test_client()
+    client = member
     rid = _printable(db)
     assert client.get(f"/recipes/{rid}/pdf").status_code == 200
     assert client.get(f"/recipes/{rid}/image").status_code == 200

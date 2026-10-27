@@ -28,8 +28,8 @@ def create_app(config_obj=None):
         if db is not None:
             db.close()
 
-    # A fixed key (set in the container's env) keeps people logged in across
-    # restarts; without one, each start signs everyone out.
+    # The session only carries flash messages; a fixed key (set in the
+    # container's env) keeps them working across restarts.
     import secrets
     app.secret_key = os.environ.get("RECIPES_SECRET_KEY") or secrets.token_hex(32)
 
@@ -42,7 +42,6 @@ def create_app(config_obj=None):
     from app.routes.import_pdf import bp as import_pdf_bp
     from app.routes.duplicates import bp as duplicates_bp
     from app.routes.help import bp as help_bp
-    from app.routes.auth import bp as auth_bp, require_login
     app.register_blueprint(browse_bp)
     app.register_blueprint(recipe_bp)
     app.register_blueprint(media_bp)
@@ -52,19 +51,26 @@ def create_app(config_obj=None):
     app.register_blueprint(import_pdf_bp)
     app.register_blueprint(duplicates_bp)
     app.register_blueprint(help_bp)
-    app.register_blueprint(auth_bp)
 
-    app.before_request(require_login)
+    from app import users
+    app.before_request(users.load_user)
+
+    @app.errorhandler(403)
+    def forbidden(exc):
+        from flask import render_template
+        return render_template("forbidden.html", message=exc.description), 403
 
     from app.images import thumb_filename
     app.jinja_env.globals["thumb_filename"] = thumb_filename
 
     @app.context_processor
-    def inject_auth_state():
-        from flask import session
+    def inject_permissions():
         return {
-            "login_required": bool(cfg.APP_PASSWORD),
-            "is_authenticated": bool(session.get("authenticated")) or not cfg.APP_PASSWORD,
+            "current_user": users.current_user(),
+            "is_admin": users.is_admin(),
+            "can_edit_recipe": users.can_edit_recipe,
+            "can_delete_recipe": users.can_delete_recipe,
+            "can_delete_note": users.can_delete_note,
         }
 
     @app.template_filter("fmtdate")

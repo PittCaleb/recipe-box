@@ -10,6 +10,7 @@ from app.models.recipes import (
     delete_recipe, get_recipe, save_recipe, set_image_filename, split_guess, update_note,
 )
 from app.sanitize import sanitize_instructions
+from app.users import can_delete_note, can_delete_recipe, can_edit_recipe, current_user, is_admin, require
 
 bp = Blueprint("edit", __name__, url_prefix="/recipes")
 
@@ -121,6 +122,19 @@ def _ingredients_from_rows(rows):
     return ingredients, errors
 
 
+def _editable_notes(notes):
+    """Notes the editor may change: their own, or any for an admin."""
+    return [n for n in notes if can_delete_note(n)]
+
+
+def _get_editable_or_404(db, recipe_id):
+    data = get_recipe(db, recipe_id, current_user()["id"])
+    if data is None:
+        abort(404)
+    require(can_edit_recipe(data["recipe"]))
+    return data
+
+
 def _render_form(recipe, rows, notes, values=None, status=200):
     """`values` fills the fields; when a save fails it's what was submitted,
     so nothing typed is lost. `recipe` is only the saved recipe, if any (for
@@ -141,10 +155,10 @@ def _notes_with_submitted_edits(notes, form):
     ]
 
 
-def _parse_fields(form):
+def _parse_fields(form, needs_review=0):
+    """`needs_review` is kept as given unless an admin is saving: only admins
+    see that checkbox."""
     category_id = form.get("category_id", "").strip()
-    rating = form.get("rating", "").strip()
-    last_made = form.get("last_made", "").strip()
     return {
         "title": form.get("title", "").strip(),
         "category_id": int(category_id) if category_id else None,
@@ -154,10 +168,7 @@ def _parse_fields(form):
         "prep_time": form.get("prep_time", "").strip() or None,
         "cook_time": form.get("cook_time", "").strip() or None,
         "instructions_html": sanitize_instructions(form.get("instructions_html", "")),
-        "needs_review": 1 if form.get("needs_review") == "1" else 0,
-        "favorite": 1 if form.get("favorite") == "1" else 0,
-        "rating": int(rating) if rating else None,
-        "last_made": last_made or None,
+        "needs_review": (1 if form.get("needs_review") == "1" else 0) if is_admin() else needs_review,
     }
 
 
@@ -170,16 +181,15 @@ def new():
 
 @bp.route("/<int:recipe_id>/edit", methods=["GET"])
 def edit(recipe_id):
-    db = get_db()
-    data = get_recipe(db, recipe_id)
-    if data is None:
-        abort(404)
-    return _render_form(data["recipe"], _form_rows_from_ingredients(data["ingredients"]), data["notes"])
+    data = _get_editable_or_404(get_db(), recipe_id)
+    return _render_form(
+        data["recipe"], _form_rows_from_ingredients(data["ingredients"]), _editable_notes(data["notes"]),
+    )
 
 
-def _validate(form):
+def _validate(form, needs_review=0):
     """Parsed fields + ingredients, or a list of problems to show."""
-    fields = _parse_fields(form)
+    fields = _parse_fields(form, needs_review)
     rows = _form_rows_from_request(form)
     ingredients, errors = _ingredients_from_rows(rows)
     if not fields["title"]:
@@ -196,7 +206,7 @@ def create():
             flash(e)
         return _render_form(None, rows, [], values=fields, status=400)
 
-    recipe_id = save_recipe(db, None, fields, ingredients)
+    recipe_id = save_recipe(db, None, {**fields, "owner_id": current_user()["id"]}, ingredients)
 
     image_file = request.files.get("image")
     if image_file and image_file.filename:
@@ -213,22 +223,21 @@ def create():
 @bp.route("/<int:recipe_id>", methods=["POST"])
 def update(recipe_id):
     db = get_db()
-    data = get_recipe(db, recipe_id)
-    if data is None:
-        abort(404)
+    data = _get_editable_or_404(db, recipe_id)
+    notes = _editable_notes(data["notes"])
 
-    fields, rows, ingredients, errors = _validate(request.form)
+    fields, rows, ingredients, errors = _validate(request.form, data["recipe"]["needs_review"])
     if errors:
         for e in errors:
             flash(e)
         return _render_form(
-            data["recipe"], rows, _notes_with_submitted_edits(data["notes"], request.form),
+            data["recipe"], rows, _notes_with_submitted_edits(notes, request.form),
             values=fields, status=400,
         )
 
     save_recipe(db, recipe_id, fields, ingredients)
 
-    for note in data["notes"]:
+    for note in notes:
         key = f"note_body_{note['id']}"
         if key in request.form:
             update_note(db, recipe_id, note["id"], request.form[key])
@@ -253,6 +262,7 @@ def update(recipe_id):
 
 @bp.route("/<int:recipe_id>/image", methods=["POST"])
 def upload_image(recipe_id):
+    """Anyone may add or replace a photo."""
     db = get_db()
     data = get_recipe(db, recipe_id)
     if data is None:
@@ -275,9 +285,7 @@ def upload_image(recipe_id):
 @bp.route("/<int:recipe_id>/image/delete", methods=["POST"])
 def remove_image(recipe_id):
     db = get_db()
-    data = get_recipe(db, recipe_id)
-    if data is None:
-        abort(404)
+    data = _get_editable_or_404(db, recipe_id)
     cfg = _cfg()
     if data["recipe"]["image_filename"]:
         delete_recipe_image(cfg.IMAGES_DIR, data["recipe"]["image_filename"])
@@ -287,6 +295,7 @@ def remove_image(recipe_id):
 
 @bp.route("/<int:recipe_id>/delete", methods=["POST"])
 def delete(recipe_id):
+    require(can_delete_recipe())
     db = get_db()
     row = delete_recipe(db, recipe_id)
     if row is None:
