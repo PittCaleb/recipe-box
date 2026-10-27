@@ -209,6 +209,13 @@ button {
   background: var(--color-border);
 }
 
+.user-menu-who {
+  margin: 0;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+}
+
 /* ---------- Layout ---------- */
 .site-main {
   padding: 1.25rem 1rem 3rem;
@@ -710,6 +717,24 @@ button {
 .recipe-last-made {
   color: var(--color-text-muted);
   margin: 0.35rem 0;
+}
+
+.rating-stars {
+  display: flex;
+  gap: 0.1rem;
+  margin: 0.35rem 0;
+}
+.rating-star {
+  display: inline-flex;
+  padding: 0.2rem;
+  border: none;
+  background: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+.rating-star.is-on,
+.rating-star:hover {
+  color: #e0a526;
 }
 
 .recipe-photo {

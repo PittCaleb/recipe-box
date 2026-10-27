@@ -56,32 +56,14 @@
       </div>
     </div>
 
-    <div class="field-row">
-      <div class="field">
-        <label for="rating">Rating</label>
-        <select id="rating" name="rating">
-          <option value="">(none)</option>
-          {% for n in range(1, 6) %}
-          <option value="{{ n }}" {% if values.rating == n %}selected{% endif %}>{{ n }} star{{ 's' if n != 1 }}</option>
-          {% endfor %}
-        </select>
-      </div>
-      <div class="field">
-        <label for="last_made">Last made</label>
-        <input type="date" id="last_made" name="last_made" value="{{ values.last_made or '' }}">
-      </div>
-    </div>
-
+    {% if is_admin %}
     <div class="field-row field-row--checks">
-      <label class="toggle-chip">
-        <input type="checkbox" name="favorite" value="1" {% if values.favorite %}checked{% endif %}>
-        Favorite
-      </label>
       <label class="toggle-chip">
         <input type="checkbox" name="needs_review" value="1" {% if values.needs_review %}checked{% endif %}>
         Needs review
       </label>
     </div>
+    {% endif %}
 
     <div class="field">
       <label>Image</label>
@@ -142,12 +124,12 @@
     <div class="edit-form-actions">
       <button type="submit" class="btn btn-primary">Save</button>
       <a class="btn btn-secondary" href="{{ url_for('recipe.view', recipe_id=recipe['id']) if recipe else url_for('browse.index') }}">Cancel</a>
-      {% if recipe %}
+      {% if recipe and can_delete_recipe() %}
       <button type="submit" form="delete-recipe-form" class="btn btn-danger">Delete recipe</button>
       {% endif %}
     </div>
   </form>
-  {% if recipe %}
+  {% if recipe and can_delete_recipe() %}
   {# Outside the edit form: browsers drop a form nested in another, which made this button submit Save. #}
   <form method="post" action="{{ url_for('edit.delete', recipe_id=recipe['id']) }}" id="delete-recipe-form"
         data-confirm="Delete this recipe permanently? This cannot be undone." hidden></form>

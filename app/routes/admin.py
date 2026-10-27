@@ -7,6 +7,7 @@ from app.export.txt_backup import build_backup_text
 from app.models.categories import add_category, delete_category, list_categories, move_category, rename_category
 from app.models.recipes import search_recipes
 from app.rendering.cookbook import render_cookbook_pdf
+from app.users import current_user
 
 bp = Blueprint("admin", __name__, url_prefix="/admin")
 
@@ -58,7 +59,7 @@ def categories_delete(category_id):
 @bp.route("/needs-review")
 def needs_review():
     db = get_db()
-    recipes = search_recipes(db, needs_review=True, sort="name")
+    recipes = search_recipes(db, needs_review=True, sort="name", user_id=current_user()["id"])
     return render_template("admin/needs_review.html", recipes=recipes)
 
 

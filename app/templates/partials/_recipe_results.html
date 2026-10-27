@@ -1,5 +1,5 @@
 {% from "_icons.html" import icon %}
-{% from "partials/_recipe_card_macro.html" import recipe_card %}
+{% from "partials/_recipe_card_macro.html" import recipe_card with context %}
 
 <div hidden data-results-count="{{ count_text }}"></div>
 
@@ -16,7 +16,7 @@
                 {% if r['favorite'] %}<span class="text-list-fav" aria-label="Favorite">{{ icon('heart-filled', 13) }}</span>{% endif %}
                 <span class="text-list-title">{{ r['title'] }}</span>
                 {% if params.group != 'category' and r['category_name'] %}<span class="text-list-cat">{{ r['category_name'] }}</span>{% endif %}
-                {% if r['needs_review'] %}<span class="badge-icon badge-icon--review" aria-label="Needs review">{{ icon('flag', 12) }}</span>{% endif %}
+                {% if is_admin and r['needs_review'] %}<span class="badge-icon badge-icon--review" aria-label="Needs review">{{ icon('flag', 12) }}</span>{% endif %}
               </a>
             </li>
             {% endfor %}
