@@ -6,7 +6,7 @@ Open items, shelved for now — nothing here blocks using the app day to day.
 
 Live at http://nas.local/recipes/ as the `recipes` container behind
 [mockingnas-dash](https://github.com/PittCaleb/mockingnas-dash). **The NAS copy is the live one**; data on the Mac is
-a stale snapshot from 2026-10-26.
+only a copy. Refresh it with `scripts/pull-live-data.sh`.
 
 To ship a change:
 1. Merge the PR to `main`. The **Docker image** GitHub Action builds and pushes `ghcr.io/pittcaleb/recipe-box:latest`
