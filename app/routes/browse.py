@@ -10,9 +10,14 @@ VALID_DISPLAYS = {"card", "text"}
 VALID_GROUPS = {"alpha", "category"}
 
 
+# Text grouped by category reads better than cards while few recipes have photos.
+DEFAULT_DISPLAY = "text"
+DEFAULT_GROUP = "category"
+
+
 def _search_params():
-    display = request.args.get("display", "card")
-    group = request.args.get("group", "alpha")
+    display = request.args.get("display", DEFAULT_DISPLAY)
+    group = request.args.get("group", DEFAULT_GROUP)
     # The worklist filters are admin tools.
     admin = is_admin()
     return {
@@ -22,8 +27,8 @@ def _search_params():
         "needs_review": admin and request.args.get("needs_review") == "1",
         "favorites": request.args.get("favorites") == "1",
         "needs_split": admin and request.args.get("needs_split") == "1",
-        "display": display if display in VALID_DISPLAYS else "card",
-        "group": group if group in VALID_GROUPS else "alpha",
+        "display": display if display in VALID_DISPLAYS else DEFAULT_DISPLAY,
+        "group": group if group in VALID_GROUPS else DEFAULT_GROUP,
     }
 
 

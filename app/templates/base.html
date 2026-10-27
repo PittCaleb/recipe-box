@@ -14,6 +14,7 @@
       <a class="site-title" href="{{ url_for('browse.index') }}">Recipes</a>
       <nav class="site-nav">
         {% if current_user %}
+          <span class="site-welcome">Welcome {{ current_user['email'].split('@')[0] }}</span>
           {% include "partials/_user_menu.html" %}
         {% endif %}
       </nav>
