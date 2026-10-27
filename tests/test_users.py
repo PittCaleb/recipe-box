@@ -67,12 +67,14 @@ def test_migration_gives_existing_recipes_and_history_to_user_1(cfg):
 
 def test_home_visitor_is_the_admin(client, db):
     html = client.get("/").data.decode()
-    assert "Signed in as Caleb" in html
+    assert "Welcome caleb<" in html
     assert "/admin/" in html
 
 
 def test_first_signed_in_visit_creates_a_regular_user(member, db):
-    assert member.get("/").status_code == 200
+    resp = member.get("/")
+    assert resp.status_code == 200
+    assert b"Welcome pat<" in resp.data
     row = db.execute("SELECT * FROM users WHERE email = 'pat@example.com'").fetchone()
     assert (row["display_name"], row["is_admin"]) == ("Pat", 0)
     member.get("/")

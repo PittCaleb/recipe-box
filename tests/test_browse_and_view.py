@@ -149,9 +149,17 @@ def _headings(html, cls):
     return re.findall(rf'<h2 class="{cls}">([^<]+)</h2>', html.decode())
 
 
-def test_default_view_is_cards_grouped_by_letter(client, db):
+def test_default_view_is_text_grouped_by_category(client, db):
     _seed_two_categories(db)
     resp = client.get("/api/search")
+    assert b"recipe-text-list" in resp.data
+    assert b"recipe-card-title" not in resp.data
+    assert _headings(resp.data, "text-list-heading") == ["Breads", "Desserts", "Uncategorized"]
+
+
+def test_cards_grouped_by_letter(client, db):
+    _seed_two_categories(db)
+    resp = client.get("/api/search?display=card&group=alpha")
     assert b"recipe-card-title" in resp.data
     assert b"recipe-text-list" not in resp.data
     assert _headings(resp.data, "card-section-heading") == ["A", "B", "L", "Z"]
@@ -185,7 +193,7 @@ def test_search_keeps_display_style_and_category_headings(client, db):
 
 def test_search_keeps_letter_headings(client, db):
     _seed_two_categories(db)
-    resp = client.get("/api/search?q=bread")
+    resp = client.get("/api/search?q=bread&display=card&group=alpha")
     assert _headings(resp.data, "card-section-heading") == ["B", "Z"]
 
 
@@ -197,7 +205,7 @@ def test_index_count_is_in_controls_bar(client, db):
 
 def test_recency_sort_disables_grouping(client, db):
     _seed_two_categories(db)
-    resp = client.get("/api/search?sort=recent_added&group=alpha")
+    resp = client.get("/api/search?sort=recent_added&display=card&group=alpha")
     assert _headings(resp.data, "card-section-heading") == []
     assert resp.data.count(b"recipe-card-title") == 4
 
@@ -205,8 +213,8 @@ def test_recency_sort_disables_grouping(client, db):
 def test_invalid_display_and_group_fall_back_to_defaults(client, db):
     _seed_two_categories(db)
     resp = client.get("/api/search?display=bogus&group=bogus")
-    assert b"recipe-card-title" in resp.data
-    assert _headings(resp.data, "card-section-heading") == ["A", "B", "L", "Z"]
+    assert b"recipe-text-list" in resp.data
+    assert _headings(resp.data, "text-list-heading") == ["Breads", "Desserts", "Uncategorized"]
 
 
 def test_index_page_renders_view_toggles(client, db):
@@ -226,7 +234,7 @@ def test_category_grouping_follows_admin_sort_order(client, db):
     a = db.execute("SELECT id FROM categories WHERE name='Apple Dishes'").fetchone()["id"]
     _make_recipe(db, title="One", category_id=a)
     _make_recipe(db, title="Two", category_id=z)
-    resp = client.get("/api/search?group=category")
+    resp = client.get("/api/search?display=card&group=category")
     assert _headings(resp.data, "card-section-heading") == ["Zebra Dishes", "Apple Dishes"]
 
 
@@ -240,7 +248,7 @@ def test_results_count_reflects_filter(client, db):
 def test_non_letter_titles_group_under_hash(client, db):
     _make_recipe(db, title="7-Layer Dip")
     _make_recipe(db, title="Apple Pie")
-    resp = client.get("/api/search")
+    resp = client.get("/api/search?display=card&group=alpha")
     assert _headings(resp.data, "card-section-heading") == ["#", "A"]
 
 
