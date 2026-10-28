@@ -71,6 +71,7 @@ def create_app(config_obj=None):
             "can_edit_recipe": users.can_edit_recipe,
             "can_delete_recipe": users.can_delete_recipe,
             "can_delete_note": users.can_delete_note,
+            "can_draw_pictures": bool(cfg.ANTHROPIC_API_KEY),
         }
 
     @app.template_filter("fmtdate")

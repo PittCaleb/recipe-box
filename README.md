@@ -45,8 +45,9 @@ All settings are environment variables with sensible defaults; see `config.py`:
 | `RECIPES_ACCESS_TEAM_DOMAIN` | unset | Cloudflare Access team domain, e.g. `yourteam.cloudflareaccess.com` |
 | `RECIPES_ACCESS_AUD` | unset | The Access application's Audience (AUD) tag |
 | `RECIPES_COOKBOOK_TITLE` | `Our Family Recipes` | Default cookbook cover title |
-| `ANTHROPIC_API_KEY` | unset | Required for **Admin → Import a new PDF** (see below) |
+| `ANTHROPIC_API_KEY` | unset | Required for **Admin → Import a new PDF** and for drawn placeholder pictures (see below) |
 | `RECIPES_IMPORT_MODEL` | `claude-opus-5-5` | Model used to transcribe uploaded PDFs |
+| `RECIPES_PLACEHOLDER_MODEL` | `claude-sonnet-5-5` | Model that draws placeholder pictures |
 | `RECIPES_PDF_DIR` | `./pdf` | Where source and uploaded PDFs live |
 
 ## People and permissions
@@ -178,6 +179,30 @@ collection — won't be stitched together automatically. It comes through
 with `needs_review` set and a note that the instructions look cut off; you
 finish it by hand afterward (open the recipe, check the next page's scan if
 needed, and paste in the rest) via the normal edit screen.
+
+## Placeholder pictures
+
+A recipe without a photo gets a drawn picture so the page doesn't look bare:
+a flat illustration of the dish on the same wooden table as all the others.
+They're drawn by Claude (Sonnet) from the title, category, ingredients and
+instructions, using a few of the hand-drawn set in
+`app/placeholder_examples/` as the style guide, then turned into a JPEG with
+`rsvg-convert` (`brew install librsvg` on the Mac; it's in the Docker image).
+Each one costs a few cents and takes 10–60 seconds in the background.
+
+- A new recipe saved without a photo gets one, and so does each recipe from
+  a PDF import.
+- On a recipe, **Replace image → Replace with a new AI drawing** (also under
+  Image on the edit page) draws a fresh one in place of the current picture,
+  photo or drawing. Owners and admins only, since the current one is deleted.
+- Uploading a real photo always replaces a drawing.
+- Drawings are marked `image_is_placeholder = 1` in `recipes`.
+- Nothing happens without `ANTHROPIC_API_KEY`. If a drawing fails, the
+  recipe just stays without a picture and the error goes to the app's log.
+
+The first 59 were drawn by hand in code: `scripts/placeholder-images/`
+(`scenes.py`, `scenes2.py`, `16.svg`) holds them, and `sheet.py` makes a
+contact sheet.
 
 ## Sharing a recipe
 

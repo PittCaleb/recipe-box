@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1200" width="1600" height="1200">
+  <!-- wooden table -->
+  <rect width="1600" height="1200" fill="#8c5a3c"/>
+  <g stroke="#7a4c31" stroke-width="5" fill="none" stroke-linecap="round">
+    <path d="M0 140 C 400 120, 900 165, 1600 135"/>
+    <path d="M0 330 C 500 350, 1100 305, 1600 340"/>
+    <path d="M0 560 C 350 540, 1000 585, 1600 550"/>
+    <path d="M0 800 C 600 820, 1100 780, 1600 810"/>
+    <path d="M0 1010 C 450 990, 1000 1030, 1600 1000"/>
+  </g>
+
+  <!-- pie plate shadow, plate, crust -->
+  <ellipse cx="700" cy="560" rx="560" ry="400" fill="#6e4329"/>
+  <ellipse cx="680" cy="530" rx="560" ry="400" fill="#f6f1ea"/>
+  <ellipse cx="680" cy="530" rx="520" ry="365" fill="#e9e1d6"/>
+  <ellipse cx="680" cy="530" rx="470" ry="325" fill="#b57a45"/>
+  <ellipse cx="680" cy="525" rx="455" ry="312" fill="#d39a5c"/>
+  <!-- fluted crust edge -->
+  <g fill="#e6b071">
+    <circle cx="680" cy="208" r="34"/><circle cx="790" cy="214" r="34"/><circle cx="895" cy="232" r="34"/>
+    <circle cx="990" cy="262" r="34"/><circle cx="1068" cy="304" r="34"/><circle cx="1124" cy="356" r="34"/>
+    <circle cx="1152" cy="416" r="34"/><circle cx="1158" cy="478" r="34"/><circle cx="1150" cy="540" r="34"/>
+    <circle cx="1126" cy="604" r="34"/><circle cx="1084" cy="664" r="34"/><circle cx="1020" cy="716" r="34"/>
+    <circle cx="940" cy="758" r="34"/><circle cx="845" cy="786" r="34"/><circle cx="740" cy="800" r="34"/>
+    <circle cx="630" cy="802" r="34"/><circle cx="525" cy="788" r="34"/><circle cx="428" cy="760" r="34"/>
+    <circle cx="345" cy="718" r="34"/><circle cx="282" cy="664" r="34"/><circle cx="240" cy="604" r="34"/>
+    <circle cx="214" cy="540" r="34"/><circle cx="206" cy="478" r="34"/><circle cx="214" cy="416" r="34"/>
+    <circle cx="240" cy="356" r="34"/><circle cx="294" cy="304" r="34"/><circle cx="370" cy="262" r="34"/>
+    <circle cx="465" cy="232" r="34"/><circle cx="570" cy="214" r="34"/>
+  </g>
+  <!-- chocolate filling, with the slice gap -->
+  <ellipse cx="680" cy="510" rx="420" ry="270" fill="#3d2216"/>
+  <path d="M680 510 L1100 500 A420 270 0 0 1 1010 680 Z" fill="#2a160d"/>
+  <path d="M680 510 L1100 500" stroke="#1d0f08" stroke-width="4"/>
+  <!-- crackly top -->
+  <g stroke="#5b3424" stroke-width="7" fill="none" stroke-linecap="round">
+    <path d="M380 420 C 440 395, 500 440, 570 410"/>
+    <path d="M330 520 C 400 490, 470 540, 560 505"/>
+    <path d="M720 380 C 790 360, 850 400, 930 375"/>
+    <path d="M450 620 C 520 600, 600 640, 680 610"/>
+    <path d="M760 600 C 820 580, 880 610, 940 590"/>
+  </g>
+  <g fill="#6b4130">
+    <ellipse cx="520" cy="470" rx="60" ry="14"/><ellipse cx="820" cy="450" rx="75" ry="16"/>
+    <ellipse cx="600" cy="680" rx="65" ry="14"/><ellipse cx="900" cy="410" rx="35" ry="10"/>
+  </g>
+  <g fill="#fff6e8" opacity="0.85">
+    <circle cx="460" cy="560" r="5"/><circle cx="610" cy="420" r="4"/><circle cx="760" cy="540" r="5"/>
+    <circle cx="890" cy="520" r="4"/><circle cx="540" cy="640" r="4"/><circle cx="700" cy="460" r="4"/>
+  </g>
+
+  <!-- dessert plate with a slice -->
+  <ellipse cx="1300" cy="960" rx="270" ry="150" fill="#6e4329"/>
+  <ellipse cx="1290" cy="940" rx="270" ry="150" fill="#f6f1ea"/>
+  <ellipse cx="1290" cy="940" rx="210" ry="110" fill="#e9e1d6"/>
+  <!-- slice: crust, filling, top -->
+  <path d="M1110 985 L1440 895 L1450 950 L1125 1040 Z" fill="#d39a5c"/>
+  <path d="M1110 955 L1440 865 L1440 905 L1110 995 Z" fill="#3d2216"/>
+  <path d="M1110 955 L1440 865 L1390 840 Z" fill="#2a160d"/>
+  <path d="M1435 860 C 1475 860, 1480 930, 1450 950 L1440 895 Z" fill="#e6b071"/>
+  <!-- whipped cream -->
+  <ellipse cx="1300" cy="855" rx="62" ry="28" fill="#fffaf2"/>
+  <ellipse cx="1300" cy="835" rx="44" ry="24" fill="#fffdf8"/>
+  <ellipse cx="1300" cy="815" rx="24" ry="16" fill="#ffffff"/>
+  <path d="M1300 790 C 1310 800, 1312 806, 1300 812" fill="#ffffff"/>
+  <circle cx="1282" cy="848" r="4" fill="#3d2216"/><circle cx="1318" cy="842" r="4" fill="#3d2216"/>
+</svg>

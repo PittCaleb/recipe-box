@@ -15,7 +15,30 @@ def cfg(tmp_path):
     c = Config()
     c.PDF_DIR = tmp_path / "pdf"
     c.DATA_DIR = tmp_path / "data"
+    # A key in .env must never reach the tests; ones that need it set their own.
+    c.ANTHROPIC_API_KEY = None
     return c
+
+
+FAKE_SVG = (
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1200" width="1600" height="1200">'
+    '<rect width="1600" height="1200" fill="#8c5a3c"/><ellipse cx="800" cy="600" rx="500" ry="320" fill="#f6f1ea"/></svg>'
+)
+
+
+@pytest.fixture(autouse=True)
+def fake_placeholder_drawing(monkeypatch):
+    """Placeholder pictures are drawn inline from a fixed SVG, never by Claude.
+    The list records each recipe title that was drawn."""
+    import app.placeholder_images as placeholders
+    drawn = []
+
+    def draw(title, *args, **kwargs):
+        drawn.append(title)
+        return FAKE_SVG
+    monkeypatch.setattr(placeholders, "RUN_IN_BACKGROUND", False)
+    monkeypatch.setattr(placeholders, "draw_placeholder_svg", draw)
+    return drawn
 
 
 ACCESS_TEAM = "team.example.com"
