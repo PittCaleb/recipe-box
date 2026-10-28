@@ -1,20 +1,23 @@
 # Recipes (recipe-box)
 
-The family cookbook: a Flask + SQLite web app. It runs on the NAS behind
-[mockingnas-dash](https://github.com/PittCaleb/mockingnas-dash) at `/recipes/`.
-Read README.md (setup, configuration, people and permissions, PDF import), SPEC.md (the original design) and TODO.md
-(deploying, open items) before larger changes. This file is what those don't say.
+The family cookbook: a Flask + SQLite web app. It runs in Docker on a home NAS, behind a reverse proxy at `/recipes/`.
+Read README.md (setup, configuration, people and permissions, PDF import, running in Docker), SPEC.md (the original
+design) and TODO.md (the roadmap) before larger changes. This file is what those don't say.
 
-## Working with Caleb
+**This repo is public.** Machine names, users, addresses, emails and server paths go in `CLAUDE.local.md` (gitignored, read
+alongside this file), never in a committed file. Tests and examples use made-up people and `example.com` addresses.
+
+## Working with the owner
 
 - **Commit, push and open a PR only when asked.** The usual words are "commit this, push it and create the pr". Branch off
   an up-to-date `main` for each piece of work. Bundle related work into one PR rather than splitting it finely.
 - **Never commit `config.py`'s local change** (`RECIPES_PORT` default 5052; the committed default is 5050) or `.coverage`.
   When `config.py` has real changes: set the port back to 5050, `git add config.py`, then restore 5052.
-- **Deploying touches production.** Do it when Caleb says to ("go ahead and deploy"); the permission check blocks it otherwise.
+- **Deploying touches production.** Do it when the owner says to ("go ahead and deploy"); the permission check blocks it
+  otherwise. The steps are in `CLAUDE.local.md`.
 - **The NAS copy is the live data.** `data/` on the Mac is only a copy; refresh it with
   `scripts/pull-live-data.sh` (stop the local app first). Never copy local data over the NAS.
-- Plain, friendly language in UI text and summaries. He tests on his phone (iPhone) as well as the Mac.
+- Plain, friendly language in UI text and summaries. Check changes on a phone (iPhone) as well as the Mac.
 
 ## Running and testing
 
@@ -44,15 +47,14 @@ Read README.md (setup, configuration, people and permissions, PDF import), SPEC.
   startup, recorded in `schema_version`. Next number: **007**.
   - Before deploying a migration, copy the live database (from the latest backup archive on the NAS) to the scratchpad, run the
     migration against the copy, and render every page as admin and as a member.
-  - Snapshot the live DB in the container right before deploying:
-    `docker exec mockingnas-recipes-1 python -c "import sqlite3; sqlite3.connect('/data/recipes.db').backup(sqlite3.connect('/data/recipes-pre-NNN.db'))"`.
+  - Snapshot the live DB in the container right before deploying (command in `CLAUDE.local.md`).
 - **Placeholder pictures** (`app/placeholder_images.py`, since 2026-10-28): a recipe saved without a photo, or imported from a
   PDF, gets a drawing from Sonnet in a background thread, rendered with `rsvg-convert` (in the Docker image). The style comes
   from `app/placeholder_examples/`; the model may only use plain shapes (`check_svg`). `image_is_placeholder` marks them;
   any photo replaces one. "Replace with a new AI drawing" (`edit.draw_image`) is owner/admin only, since it deletes the current
   picture, and links only if the picture hasn't changed meanwhile. Tests never call Claude: `conftest.py` runs the job inline
   with a fixed SVG and clears the API key.
-- **Search:** SQLite FTS5 (`recipes_fts`), kept in sync by `_sync_fts` on every save. Ranked with `bm25`. Caleb chose to stay on
+- **Search:** SQLite FTS5 (`recipes_fts`), kept in sync by `_sync_fts` on every save. Ranked with `bm25`. The owner chose to stay on
   SQLite (2026-10-27): no Postgres/MySQL.
 - **Templates:** icons are macros in `_icons.html` (`icon('name', size)`). Destructive forms use `data-confirm`. Macros that need
   `is_admin` etc. must be imported `with context`. The browse view state is remembered per device in
@@ -61,10 +63,10 @@ Read README.md (setup, configuration, people and permissions, PDF import), SPEC.
 ## People and permissions (since 2026-10-27, PR #12)
 
 - **Identity:** `app/users.py`. `load_user` runs before every request except static files.
-  1. A `Cf-Access-Jwt-Assertion` header must verify against `RECIPES_ACCESS_TEAM_DOMAIN` (`your-team.cloudflareaccess.com`)
+  1. A `Cf-Access-Jwt-Assertion` header must verify against `RECIPES_ACCESS_TEAM_DOMAIN`
      and `RECIPES_ACCESS_AUD`, using RS256 with keys from `/cdn-cgi/access/certs`. Its email becomes a `users` row, created
      automatically as a non-admin on the first visit.
-  2. With no token, a host in `RECIPES_HOME_HOSTS` acts as user 1 (caleb@hail2pitt.org, admin).
+  2. With no token, a host in `RECIPES_HOME_HOSTS` acts as user 1 (the owner, admin).
   3. Anything else gets a 403.
   4. A bad token gets a 403 even on a home host.
   5. **The plain `Cf-Access-Authenticated-User-Email` header is never trusted.**
@@ -90,16 +92,7 @@ Read README.md (setup, configuration, people and permissions, PDF import), SPEC.
 
 ## Deploying
 
-1. Merge the PR. The **Docker image** Action builds `ghcr.io/pittcaleb/recipe-box:latest`. The package is public, and the build
-   takes a few minutes; check with `gh run list --limit 1`.
-2. Run `ssh user@nas.local /share/Container/apps/update.sh recipes`. Right after a restart there's a few seconds
-   of 502 while the app starts, so retry before worrying.
-3. Check `https://nas.example.com/recipes/` and `http://nas.local/recipes/` with curl.
-   `https://home.example.com/recipes/` should 302 to the Cloudflare login when not signed in.
-4. Settings live in `/share/Container/apps/env/recipes.env` on the NAS:
-   - `ANTHROPIC_API_KEY`, `RECIPES_SECRET_KEY` and `RECIPES_COOKBOOK_TITLE`;
-   - `RECIPES_HOME_HOSTS=nas.example.com,nas.local,192.168.1.10,localhost`;
-   - the Access team domain and AUD.
-   New settings must be in that file **before** the image that needs them starts.
-
-More on the NAS, Caddy, Cloudflare and backups: mockingnas-dash's `CLAUDE.md` and `TODO.md`.
+See `CLAUDE.local.md` for the server, the commands and the checks. In short: merge the PR, wait for the **Docker image**
+Action (`gh run list --limit 1`), snapshot the live database if a migration is going out, update the container, then check
+the home and public addresses. Right after a restart there's a few seconds of 502 while the app starts, so retry before
+worrying. New settings must be in the server's env file **before** the image that needs them starts.

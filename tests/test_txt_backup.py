@@ -126,8 +126,8 @@ def test_round_trip_matches_database(db):
     assert f["SERVINGS"] == row["servings"]
     assert f["PREP TIME"] == (row["prep_time"] or "")
     assert f["COOK TIME"] == row["cook_time"]
-    assert f["OWNER"] == "caleb@hail2pitt.org"
-    assert f["PERSONAL"] == "caleb@hail2pitt.org (favorite, 5 stars, made 2026-09-14)"
+    assert f["OWNER"] == "owner@example.com"
+    assert f["PERSONAL"] == "owner@example.com (favorite, 5 stars, made 2026-09-14)"
     assert f["NEEDS REVIEW"] == "no"
     assert f["IMAGE FILE"] == row["image_filename"]
     assert f["SCAN FILE"] == row["scan_filename"]
