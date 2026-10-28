@@ -3,9 +3,9 @@
   const results = document.getElementById("results");
   if (!form || !results) return;
 
-  // Renamed when the default view became Text by category, so browsers
-  // that remembered the old Cards / A–Z default start fresh once.
-  const STATE_KEY = "recipes.browseQuery.v2";
+  // Renamed whenever the default view changes (now Cards by category), so
+  // browsers that remembered the old default start fresh once.
+  const STATE_KEY = "recipes.browseQuery.v3";
 
   function currentQuery() {
     return new URLSearchParams(new FormData(form)).toString();

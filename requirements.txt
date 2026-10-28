@@ -3,6 +3,7 @@ waitress==3.0.2
 nh3==0.2.18
 PyMuPDF==1.25.1
 Pillow==12.3.0
+pillow-heif==1.8.1
 WeasyPrint==70.0
 anthropic==1.17.0
 pydantic==2.14.1

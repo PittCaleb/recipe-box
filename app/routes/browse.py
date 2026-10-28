@@ -10,8 +10,9 @@ VALID_DISPLAYS = {"card", "text"}
 VALID_GROUPS = {"alpha", "category"}
 
 
-# Text grouped by category reads better than cards while few recipes have photos.
-DEFAULT_DISPLAY = "text"
+# Cards by category, now that every recipe has a picture (a drawn placeholder
+# until there's a photo).
+DEFAULT_DISPLAY = "card"
 DEFAULT_GROUP = "category"
 
 

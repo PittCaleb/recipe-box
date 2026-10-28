@@ -2,6 +2,12 @@ import io
 from datetime import datetime
 
 from PIL import Image, ImageCms, ImageOps
+from pillow_heif import register_heif_opener
+
+# iPhones save photos as HEIC; this lets Pillow open them (they're saved as
+# JPEG like everything else). It applies the photo's rotation itself and
+# resets the EXIF orientation, so exif_transpose doesn't turn it twice.
+register_heif_opener()
 
 SRGB = ImageCms.ImageCmsProfile(ImageCms.createProfile("sRGB"))
 SRGB_ICC = SRGB.tobytes()
@@ -9,7 +15,13 @@ SRGB_ICC = SRGB.tobytes()
 MAX_UPLOAD_BYTES = 25 * 1024 * 1024
 MAX_LONG_SIDE = 1600
 THUMB_LONG_SIDE = 400
-ALLOWED_CONTENT_TYPES = {"image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"}
+# Opening the file is the real check; browsers on a Mac often send HEIC with no
+# type or as application/octet-stream.
+ALLOWED_CONTENT_TYPES = {
+    "image/jpeg", "image/png", "image/webp",
+    "image/heic", "image/heif", "image/heic-sequence", "image/heif-sequence",
+    "application/octet-stream",
+}
 
 
 class InvalidImage(ValueError):
