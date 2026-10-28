@@ -56,7 +56,7 @@ Read README.md (setup, configuration, people and permissions, PDF import), SPEC.
   SQLite (2026-10-27): no Postgres/MySQL.
 - **Templates:** icons are macros in `_icons.html` (`icon('name', size)`). Destructive forms use `data-confirm`. Macros that need
   `is_admin` etc. must be imported `with context`. The browse view state is remembered per device in
-  `localStorage["recipes.browseQuery.v2"]`; rename the key to reset everyone's saved view when defaults change.
+  `localStorage["recipes.browseQuery.v3"]`; rename the key to reset everyone's saved view when defaults change.
 
 ## People and permissions (since 2026-10-27, PR #12)
 
