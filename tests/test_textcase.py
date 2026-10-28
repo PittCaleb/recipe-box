@@ -12,7 +12,7 @@ from app.ingredients.textcase import title_case, title_case_ingredient
     ("(185g) confectioners' sugar", "(185g) Confectioners' Sugar"),
     ('chicken, cut into 2"x3" pieces', 'Chicken, Cut into 2"x3" Pieces'),
     ("Jell-O pudding", "Jell-O Pudding"),
-    ("MB's Grandma Cele's Filling", "MB's Grandma Cele's Filling"),
+    ("MB's Grandma Jo's Filling", "MB's Grandma Jo's Filling"),
     ("egg whites, room temp. (about 12)", "Egg Whites, Room Temp. (about 12)"),
     ("beer (12 oz.)", "Beer (12 oz.)"),
     ("salt/pepper", "Salt/Pepper"),

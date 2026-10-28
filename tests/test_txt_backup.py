@@ -86,7 +86,7 @@ def _build_full_recipe(db):
     cat_id = db.execute("SELECT id FROM categories WHERE name='Desserts – Cakes'").fetchone()["id"]
 
     rid = seed_recipe(
-        db, title="Grandma's Pound Cake", category_id=cat_id, contributor="Pat Cohen",
+        db, title="Grandma's Pound Cake", category_id=cat_id, contributor="Pat Lee",
         source="Family recipe box", servings="12", cook_time="1 hr 15 min", rating=5,
         favorite=1, last_made="2026-09-14", needs_review=0,
         image_filename="recipe-42-20260914.jpg", scan_filename="recipes2-p007-a.jpg",
@@ -126,8 +126,8 @@ def test_round_trip_matches_database(db):
     assert f["SERVINGS"] == row["servings"]
     assert f["PREP TIME"] == (row["prep_time"] or "")
     assert f["COOK TIME"] == row["cook_time"]
-    assert f["OWNER"] == "caleb@hail2pitt.org"
-    assert f["PERSONAL"] == "caleb@hail2pitt.org (favorite, 5 stars, made 2026-09-14)"
+    assert f["OWNER"] == "owner@example.com"
+    assert f["PERSONAL"] == "owner@example.com (favorite, 5 stars, made 2026-09-14)"
     assert f["NEEDS REVIEW"] == "no"
     assert f["IMAGE FILE"] == row["image_filename"]
     assert f["SCAN FILE"] == row["scan_filename"]
