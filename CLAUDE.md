@@ -41,11 +41,17 @@ Read README.md (setup, configuration, people and permissions, PDF import), SPEC.
 - **Models:** `app/models/recipes.py`. `search_recipes(..., user_id)` and `get_recipe(conn, id, user_id)` join the person's own
   `user_recipes` row in as `favorite` / `rating` / `last_made`, so templates read `r['favorite']` as before.
 - **Migrations:** `app/migrations/NNN_name.sql`, or `.py` with a `migrate(conn)` that doesn't commit. They run automatically on
-  startup, recorded in `schema_version`. Next number: **006**.
+  startup, recorded in `schema_version`. Next number: **007**.
   - Before deploying a migration, copy the live database (from the latest backup archive on the NAS) to the scratchpad, run the
     migration against the copy, and render every page as admin and as a member.
   - Snapshot the live DB in the container right before deploying:
     `docker exec mockingnas-recipes-1 python -c "import sqlite3; sqlite3.connect('/data/recipes.db').backup(sqlite3.connect('/data/recipes-pre-NNN.db'))"`.
+- **Placeholder pictures** (`app/placeholder_images.py`, since 2026-10-28): a recipe saved without a photo, or imported from a
+  PDF, gets a drawing from Sonnet in a background thread, rendered with `rsvg-convert` (in the Docker image). The style comes
+  from `app/placeholder_examples/`; the model may only use plain shapes (`check_svg`). `image_is_placeholder` marks them;
+  any photo replaces one. "Replace with a new AI drawing" (`edit.draw_image`) is owner/admin only, since it deletes the current
+  picture, and links only if the picture hasn't changed meanwhile. Tests never call Claude: `conftest.py` runs the job inline
+  with a fixed SVG and clears the API key.
 - **Search:** SQLite FTS5 (`recipes_fts`), kept in sync by `_sync_fts` on every save. Ranked with `bm25`. Caleb chose to stay on
   SQLite (2026-10-27): no Postgres/MySQL.
 - **Templates:** icons are macros in `_icons.html` (`icon('name', size)`). Destructive forms use `data-confirm`. Macros that need

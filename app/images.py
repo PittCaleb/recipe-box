@@ -65,8 +65,12 @@ def save_recipe_image(file_storage, images_dir, recipe_id):
 
     icc = im.info.get("icc_profile")
     im = ImageOps.exif_transpose(im)
-    im = _to_srgb(im, icc)
+    return save_image_files(_to_srgb(im, icc), images_dir, recipe_id)
 
+
+def save_image_files(im, images_dir, recipe_id):
+    """Saves an RGB image as the recipe's full-size (max 1600px) and 400px
+    thumbnail JPEGs. Returns the main image filename."""
     full = _resized(im, MAX_LONG_SIDE)
     thumb = _resized(im, THUMB_LONG_SIDE)
 
