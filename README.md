@@ -1,6 +1,7 @@
 # Recipes
 
-A personal recipe web app, served on the home Wi-Fi from the owner's Mac.
+A family recipe web app (Flask + SQLite), running in Docker on a home NAS. See
+"Running in Docker" below; it also runs straight from a checkout for development.
 
 > **Note:** `pdf/` (source scans) and `data/` (the database, images, and
 > everything else generated from them) are gitignored and not part of this
@@ -31,6 +32,14 @@ python run.py
 ```
 
 This prints the local URL and the LAN URL (for phones/tablets on the same Wi-Fi).
+
+## Browsing
+
+The home page lists recipes as **Cards** (a picture per recipe) or **Text**
+(a compact list in 1, 2 or 3 columns depending on screen width), grouped
+**A–Z** (letter headers) or by **Category** (headers in the Admin →
+Categories order). Within each group, recipes are sorted alphabetically.
+Each device remembers the view it was last left on.
 
 ## Configuration
 
@@ -225,8 +234,22 @@ you like:
 pytest
 ```
 
-## Future: Docker on the NAS
+## Running in Docker
 
-Not built yet. The app already avoids hard-coded paths and keeps all
-mutable state under one data directory, so it should containerize cleanly
-when that time comes.
+The live copy runs as a Docker container on a home NAS, behind a reverse
+proxy that serves it under `/recipes/` (the app follows the proxy's
+`X-Forwarded-Prefix`, so any sub-path works). **The server's data is the live
+copy**; data on a development machine is only a copy, refreshed with
+`scripts/pull-live-data.sh` (stop the local app first).
+
+- Merging to `main` runs the **Docker image** GitHub Action, which builds and
+  pushes `ghcr.io/pittcaleb/recipe-box:latest` (a few minutes; watch the
+  repo's Actions tab). Pull that image on the server and restart the
+  container to ship a change.
+- Everything that changes (database, photos, scans, import files, PDFs) lives
+  in `/data` inside the container, mounted from the host.
+- Settings are the environment variables under Configuration, plus
+  `RECIPES_SECRET_KEY` (signs the session cookie). Put a new setting in place
+  before starting the image that needs it; restart to change one.
+- Migrations run by themselves when the container starts.
+- Copy files to the server with `rsync`; it has no SFTP, so `scp` fails.

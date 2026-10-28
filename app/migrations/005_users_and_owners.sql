@@ -1,5 +1,7 @@
 -- People are known by the email they sign in with (see app/users.py).
--- User 1 owns everything that existed before; anyone else is added on their
+-- User 1 (the owner; set their real sign-in email with
+--   UPDATE users SET email = '...' WHERE id = 1;)
+-- owns everything that existed before; anyone else is added on their
 -- first visit as a regular user. Promote someone to admin with:
 --   UPDATE users SET is_admin = 1 WHERE email = 'them@example.com';
 CREATE TABLE users (
@@ -12,7 +14,7 @@ CREATE TABLE users (
 );
 
 INSERT INTO users (id, email, display_name, is_admin, created_at)
-VALUES (1, 'caleb@hail2pitt.org', 'Caleb', 1, strftime('%Y-%m-%dT%H:%M:%S', 'now', 'localtime'));
+VALUES (1, 'owner@example.com', 'Owner', 1, strftime('%Y-%m-%dT%H:%M:%S', 'now', 'localtime'));
 
 ALTER TABLE recipes ADD COLUMN owner_id INTEGER REFERENCES users(id);
 UPDATE recipes SET owner_id = 1;

@@ -6,7 +6,7 @@ You are building a personal recipe web app for a single owner. The source materi
 
 **Work in phases (section 10) and stop for the owner's review where marked.** Don't skip ahead.
 
-- **Project root:** `~/projects/recipes`
+- **Project root:** the folder this repo is checked out in
 - **Source PDFs:** expected at `pdf/recipes.pdf` and `pdf/recipes2.pdf` under the project root. If they aren't there, search the project root for them and confirm the paths with the owner before starting.
 - **Host for now:** the owner's Mac, run manually from Terminal. Must be reachable from phones and tablets on the home Wi-Fi.
 - **Future host:** a Docker container on the owner's NAS. Don't build Docker now, but keep the app portable: no hard-coded absolute paths, all config from environment variables, and all mutable data under one data directory.

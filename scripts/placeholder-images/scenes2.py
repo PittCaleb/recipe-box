@@ -468,7 +468,7 @@ def blintz(x, y, a, s=1.0):
             '<ellipse cx="-60" cy="-20" rx="50" ry="16" fill="#d9a04f" opacity="0.7"/></g>')
 
 
-@scene(45)  # Blintzes (Ann Baker version)
+@scene(45)  # Blintzes (first version)
 def blintzes_first():
     out = plate(760, 660, 600, 380)
     for x, y, a in ((660, 500, -8), (860, 600, -8), (620, 720, -8), (900, 800, -8)):
@@ -478,7 +478,7 @@ def blintzes_first():
     return out + parsley(760, 620, 420, 260, 6, seed=45)
 
 
-@scene(44)  # Blintzes (J Doe version)
+@scene(44)  # Blintzes (second version)
 def blintzes_second():
     out = plate(760, 660, 600, 380)
     out = out.replace("#e9e1d6", "#b9cde0")

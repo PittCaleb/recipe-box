@@ -53,7 +53,7 @@ def test_migration_gives_existing_recipes_and_history_to_user_1(cfg):
 
     conn = get_connection(cfg.DB_PATH)
     user = conn.execute("SELECT * FROM users WHERE id = 1").fetchone()
-    assert (user["email"], user["is_admin"]) == ("caleb@hail2pitt.org", 1)
+    assert (user["email"], user["is_admin"]) == ("owner@example.com", 1)
     assert [r["owner_id"] for r in conn.execute("SELECT owner_id FROM recipes")] == [1, 1]
     assert conn.execute("SELECT author_id FROM notes").fetchone()["author_id"] == 1
     personal = conn.execute("SELECT * FROM user_recipes").fetchall()
@@ -67,7 +67,7 @@ def test_migration_gives_existing_recipes_and_history_to_user_1(cfg):
 
 def test_home_visitor_is_the_admin(client, db):
     html = client.get("/").data.decode()
-    assert "Welcome caleb<" in html
+    assert "Welcome owner<" in html
     assert "/admin/" in html
 
 
@@ -103,7 +103,7 @@ def test_public_address_without_a_token_is_refused(app):
 
 def test_email_header_alone_is_not_trusted(app, db):
     c = app.test_client()
-    headers = {"X-Forwarded-Host": PUBLIC_HOST, "Cf-Access-Authenticated-User-Email": "caleb@hail2pitt.org"}
+    headers = {"X-Forwarded-Host": PUBLIC_HOST, "Cf-Access-Authenticated-User-Email": "owner@example.com"}
     assert c.get("/", headers=headers).status_code == 403
 
 
@@ -208,14 +208,14 @@ def test_member_can_edit_own_recipe_but_not_delete_it(member, db):
 
 
 def test_member_cannot_edit_or_delete_someone_elses_recipe(member, db):
-    rid = _recipe(db, "Caleb's Pie")
+    rid = _recipe(db, "Owner's Pie")
     html = member.get(f"/recipes/{rid}").data.decode()
     assert f"/recipes/{rid}/edit" not in html
-    assert "Added by Caleb" in html
+    assert "Added by Owner" in html
     assert member.get(f"/recipes/{rid}/edit").status_code == 403
     assert member.post(f"/recipes/{rid}", data=_form("Hijacked")).status_code == 403
     assert member.post(f"/recipes/{rid}/delete").status_code == 403
-    assert db.execute("SELECT title FROM recipes WHERE id = ?", (rid,)).fetchone()["title"] == "Caleb's Pie"
+    assert db.execute("SELECT title FROM recipes WHERE id = ?", (rid,)).fetchone()["title"] == "Owner's Pie"
 
 
 def test_member_cannot_set_needs_review(member, db):
@@ -244,7 +244,7 @@ def test_admin_can_edit_and_delete_anyones_recipe(client, member, db):
 
 def test_member_notes_and_who_may_delete_them(client, member, db):
     rid = _recipe(db)
-    client.post(f"/recipes/{rid}/notes", data={"body": "Caleb's note"})
+    client.post(f"/recipes/{rid}/notes", data={"body": "Owner's note"})
     member.post(f"/recipes/{rid}/notes", data={"body": "Pat's note"})
     notes = {r["body"]: r for r in db.execute("SELECT * FROM notes WHERE recipe_id = ?", (rid,))}
     assert notes["Pat's note"]["author_id"] == _user_id(db, "pat@example.com")
@@ -253,32 +253,32 @@ def test_member_notes_and_who_may_delete_them(client, member, db):
     assert "Pat&#39;s note" in html and "&middot; Pat" in html
     assert html.count("Delete this note?") == 1
 
-    caleb_note = notes["Caleb's note"]["id"]
+    owner_note = notes["Owner's note"]["id"]
     pat_note = notes["Pat's note"]["id"]
-    assert member.post(f"/recipes/{rid}/notes/{caleb_note}/delete").status_code == 403
+    assert member.post(f"/recipes/{rid}/notes/{owner_note}/delete").status_code == 403
     assert member.post(f"/recipes/{rid}/notes/{pat_note}/delete").status_code == 302
-    assert client.post(f"/recipes/{rid}/notes/{caleb_note}/delete").status_code == 302
+    assert client.post(f"/recipes/{rid}/notes/{owner_note}/delete").status_code == 302
     assert db.execute("SELECT COUNT(*) FROM notes WHERE recipe_id = ?", (rid,)).fetchone()[0] == 0
 
 
 def test_owner_editing_cannot_rewrite_other_peoples_notes(client, member, db):
     member.post("/recipes/new", data=_form("Pat's Pie"))
     rid = db.execute("SELECT id FROM recipes WHERE title = ?", ("Pat's Pie",)).fetchone()["id"]
-    client.post(f"/recipes/{rid}/notes", data={"body": "Caleb's note"})
+    client.post(f"/recipes/{rid}/notes", data={"body": "Owner's note"})
     note_id = db.execute("SELECT id FROM notes WHERE recipe_id = ?", (rid,)).fetchone()["id"]
 
     assert f"note_body_{note_id}" not in member.get(f"/recipes/{rid}/edit").data.decode()
     member.post(f"/recipes/{rid}", data={**_form("Pat's Pie"), f"note_body_{note_id}": "rewritten"})
-    assert db.execute("SELECT body FROM notes WHERE id = ?", (note_id,)).fetchone()["body"] == "Caleb's note"
+    assert db.execute("SELECT body FROM notes WHERE id = ?", (note_id,)).fetchone()["body"] == "Owner's note"
 
 
 def test_photo_add_open_to_all_but_removal_is_owner_or_admin(member, db, cfg):
-    rid = _recipe(db, image_filename="caleb.jpg")
+    rid = _recipe(db, image_filename="owner.jpg")
     html = member.get(f"/recipes/{rid}").data.decode()
     assert "Replace image" in html
     assert "Remove image" not in html
     assert member.post(f"/recipes/{rid}/image/delete").status_code == 403
-    assert db.execute("SELECT image_filename FROM recipes WHERE id = ?", (rid,)).fetchone()[0] == "caleb.jpg"
+    assert db.execute("SELECT image_filename FROM recipes WHERE id = ?", (rid,)).fetchone()[0] == "owner.jpg"
     # Upload goes through (an empty upload just returns to the recipe).
     assert member.post(f"/recipes/{rid}/image", data={}).status_code == 302
 
@@ -298,14 +298,14 @@ def test_favorites_and_made_are_per_person(client, member, db):
     assert b"Pie" in member.get("/api/search?favorites=1").data
     assert "You last made this" in member.get(f"/recipes/{rid}").data.decode()
 
-    client.post(f"/recipes/{rid}/favorite")  # Caleb un-hearts; Pat's stays.
+    client.post(f"/recipes/{rid}/favorite")  # The owner un-hearts; Pat's stays.
     assert b"Pie" not in client.get("/api/search?favorites=1").data
     assert b"Pie" in member.get("/api/search?favorites=1").data
     assert "Jan 2, 2026" in client.get(f"/recipes/{rid}").data.decode()
 
 
 def test_recently_made_sort_uses_your_own_dates(member, db):
-    _recipe(db, "Apple", last_made="2026-05-05")  # Caleb made it; Pat never has.
+    _recipe(db, "Apple", last_made="2026-05-05")  # The owner made it; Pat never has.
     banana = _recipe(db, "Banana")
     member.get("/")
     seed_personal(db, banana, user_id=_user_id(db, "pat@example.com"), last_made="2026-01-01")
