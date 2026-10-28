@@ -149,12 +149,12 @@ def _headings(html, cls):
     return re.findall(rf'<h2 class="{cls}">([^<]+)</h2>', html.decode())
 
 
-def test_default_view_is_text_grouped_by_category(client, db):
+def test_default_view_is_cards_grouped_by_category(client, db):
     _seed_two_categories(db)
     resp = client.get("/api/search")
-    assert b"recipe-text-list" in resp.data
-    assert b"recipe-card-title" not in resp.data
-    assert _headings(resp.data, "text-list-heading") == ["Breads", "Desserts", "Uncategorized"]
+    assert b"recipe-card-title" in resp.data
+    assert b"recipe-text-list" not in resp.data
+    assert _headings(resp.data, "card-section-heading") == ["Breads", "Desserts", "Uncategorized"]
 
 
 def test_cards_grouped_by_letter(client, db):
@@ -213,8 +213,8 @@ def test_recency_sort_disables_grouping(client, db):
 def test_invalid_display_and_group_fall_back_to_defaults(client, db):
     _seed_two_categories(db)
     resp = client.get("/api/search?display=bogus&group=bogus")
-    assert b"recipe-text-list" in resp.data
-    assert _headings(resp.data, "text-list-heading") == ["Breads", "Desserts", "Uncategorized"]
+    assert b"recipe-card-title" in resp.data
+    assert _headings(resp.data, "card-section-heading") == ["Breads", "Desserts", "Uncategorized"]
 
 
 def test_index_page_renders_view_toggles(client, db):
