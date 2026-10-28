@@ -172,6 +172,12 @@
         <button type="submit" class="btn btn-primary">Save</button>
       </div>
     </form>
+    {% if can_draw_pictures and can_edit_recipe(recipe) %}
+    <form method="post" action="{{ url_for('edit.draw_image', recipe_id=recipe['id']) }}"
+          {% if recipe['image_filename'] %}data-confirm="Replace this picture with a new AI drawing? The current one will be deleted."{% endif %}>
+      <button type="submit" class="link-button">{{ 'Replace with a new AI drawing' if recipe['image_filename'] else 'Draw an AI picture' }}</button>
+    </form>
+    {% endif %}
     {% if recipe['image_filename'] and can_edit_recipe(recipe) %}
     <form method="post" action="{{ url_for('edit.remove_image', recipe_id=recipe['id']) }}" data-confirm="Remove this recipe's image?">
       <button type="submit" class="link-button">Remove image</button>

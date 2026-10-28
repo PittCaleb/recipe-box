@@ -27,6 +27,8 @@ class Config:
     COOKBOOK_TITLE = os.environ.get("RECIPES_COOKBOOK_TITLE", "Our Family Recipes")
     ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY") or None
     IMPORT_MODEL = os.environ.get("RECIPES_IMPORT_MODEL", "claude-opus-5-5")
+    # Draws a placeholder picture for each new recipe that has no photo.
+    PLACEHOLDER_MODEL = os.environ.get("RECIPES_PLACEHOLDER_MODEL", "claude-sonnet-5-5")
     PDF_DIR = Path(
         os.environ.get("RECIPES_PDF_DIR", str(Path(__file__).resolve().parent / "pdf"))
     ).resolve()
