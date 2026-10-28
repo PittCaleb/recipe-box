@@ -61,14 +61,14 @@ def test_shared_baking_staples_alone_are_not_duplicates(db):
 
 
 def test_three_copies_form_one_group(db):
-    ids = [_recipe(db, t) for t in ("Thumbprint Cookies", "Thumbprint Cookies (Pat Cohen card)",
+    ids = [_recipe(db, t) for t in ("Thumbprint Cookies", "Thumbprint Cookies (Pat Lee card)",
                                      "Thumbprint Cookies (recipes2 version)")]
     assert find_duplicate_groups(db) == [ids]
 
 
 def test_dismissed_group_is_not_suggested_again(client, db):
-    a = _recipe(db, "Blintzes (J Crozier version)")
-    b = _recipe(db, "Blintzes (Bette Galcik version)")
+    a = _recipe(db, "Blintzes (J Doe version)")
+    b = _recipe(db, "Blintzes (Ann Baker version)")
     assert find_duplicate_groups(db) == [[a, b]]
     resp = client.post("/admin/duplicates/dismiss", data={"ids": f"{a},{b}", "group_name": "Blintzes"})
     assert resp.status_code == 302
@@ -109,7 +109,7 @@ def test_different_lines_do_not_match(a, b):
 def test_merge_carries_over_history_and_notes(db):
     keep = _recipe(db, "Ladylocks", ["1 pound Crisco"], favorite=0, rating=3, last_made="2025-01-01")
     other = _recipe(db, "Ladylocks (recipes2 version)", ["1/4 pound Crisco"], favorite=1, rating=5,
-                    last_made="2026-03-01", image_filename="photo.jpg", contributor="Pat Cohen",
+                    last_made="2026-03-01", image_filename="photo.jpg", contributor="Pat Lee",
                     source_pdf="recipes2.pdf", source_page=18)
     _note(db, other, "From original card: makes double")
     _note(db, other, "Import review note: Duplicate of \"Ladylocks\" - pick one.")
@@ -126,7 +126,7 @@ def test_merge_carries_over_history_and_notes(db):
     notes = _notes(db, keep)
     assert "From original card: makes double" in notes
     assert not any("pick one" in n for n in notes)
-    assert any("Ladylocks (recipes2 version)" in n and "recipes2.pdf page 18" in n and "Pat Cohen" in n
+    assert any("Ladylocks (recipes2 version)" in n and "recipes2.pdf page 18" in n and "Pat Lee" in n
                for n in notes)
 
 
@@ -152,7 +152,7 @@ def test_merge_keeps_each_persons_own_history(db):
 
 
 def test_merge_renames_and_updates_search(client, db):
-    keep = _recipe(db, "Chicken Soup (Pat Cohen typed)", ["peppercorns"])
+    keep = _recipe(db, "Chicken Soup (Pat Lee typed)", ["peppercorns"])
     other = _recipe(db, "Chicken Soup")
     merge_recipes(db, keep, [other], new_title="Grandma Chicken Soup")
     assert db.execute("SELECT title FROM recipes WHERE id=?", (keep,)).fetchone()["title"] == "Grandma Chicken Soup"
