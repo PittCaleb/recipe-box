@@ -337,12 +337,25 @@ def delete_recipe(conn, recipe_id):
     return row
 
 
-def set_image_filename(conn, recipe_id, filename):
+def set_image_filename(conn, recipe_id, filename, placeholder=False):
     with conn:
         conn.execute(
-            "UPDATE recipes SET image_filename = ?, updated_at = ? WHERE id = ?",
-            (filename, _now(), recipe_id),
+            "UPDATE recipes SET image_filename = ?, image_is_placeholder = ?, updated_at = ? WHERE id = ?",
+            (filename, 1 if placeholder else 0, _now(), recipe_id),
         )
+
+
+def set_placeholder_image(conn, recipe_id, filename, replacing=None):
+    """Links a drawn placeholder, but only if the recipe's picture is still
+    `replacing` (None: still no picture), since a photo may have been added
+    while it was being drawn. Returns whether it was linked."""
+    with conn:
+        cur = conn.execute(
+            """UPDATE recipes SET image_filename = ?, image_is_placeholder = 1, updated_at = ?
+               WHERE id = ? AND coalesce(image_filename, '') = coalesce(?, '')""",
+            (filename, _now(), recipe_id, replacing),
+        )
+    return cur.rowcount == 1
 
 
 def _now():

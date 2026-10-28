@@ -1,10 +1,12 @@
 FROM python:3.14-slim
 
 # WeasyPrint renders PDFs with Pango; the fonts stand in for Georgia/Times.
+# librsvg2-bin (rsvg-convert) turns drawn placeholder pictures into JPEGs.
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         libpango-1.0-0 libpangoft2-1.0-0 libharfbuzz-subset0 \
         fonts-dejavu-core fonts-liberation \
+        librsvg2-bin \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
