@@ -8,6 +8,7 @@ from app import get_db
 from app.import_jobs import start_import_job
 from app.models.categories import add_category, list_categories
 from app.models.recipes import save_recipe
+from app.placeholder_images import start_placeholder_job
 from app.users import current_user
 
 bp = Blueprint("import_pdf", __name__, url_prefix="/admin/import")
@@ -118,6 +119,7 @@ def commit(batch_id):
 
     category_cache = {c["name"].lower(): c["id"] for c in list_categories(db)}
     imported = 0
+    imported_ids = []
 
     for r in recipes:
         if request.form.get(f"include_{r['id']}") != "1":
@@ -162,12 +164,15 @@ def commit(batch_id):
 
         db.execute("UPDATE import_batch_recipes SET imported_recipe_id = ? WHERE id = ?", (recipe_id, r["id"]))
         imported += 1
+        imported_ids.append(recipe_id)
 
     db.execute("UPDATE import_batches SET status = 'done', updated_at = ? WHERE id = ?",
                (datetime.now().isoformat(timespec="seconds"), batch_id))
     db.commit()
 
     flash(f"Imported {imported} recipe{'s' if imported != 1 else ''}.")
+    if start_placeholder_job(_cfg(), imported_ids):
+        flash("Placeholder pictures are being drawn for them. They'll show up over the next few minutes.")
     return redirect(url_for("admin.needs_review"))
 
 

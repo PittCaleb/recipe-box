@@ -201,7 +201,7 @@ def merge_recipes(conn, keep_id, merge_ids, new_title=None):
     if any(o is None for o in others):
         raise ValueError("one of the recipes to merge no longer exists")
 
-    image = keep["image_filename"]
+    image, placeholder = keep["image_filename"], keep["image_is_placeholder"]
     orphaned_files = []
     now = _now()
 
@@ -216,8 +216,11 @@ def merge_recipes(conn, keep_id, merge_ids, new_title=None):
                      last_made = NULLIF(max(COALESCE(last_made, ''), COALESCE(excluded.last_made, '')), '')""",
                 (keep_id, o["id"]),
             )
-            if o["image_filename"] and not image:
-                image = o["image_filename"]
+            # A real photo wins over a drawn placeholder.
+            if o["image_filename"] and (not image or (placeholder and not o["image_is_placeholder"])):
+                if image:
+                    orphaned_files.append(("image", image))
+                image, placeholder = o["image_filename"], o["image_is_placeholder"]
             elif o["image_filename"]:
                 orphaned_files.append(("image", o["image_filename"]))
             if o["scan_filename"]:
@@ -241,8 +244,8 @@ def merge_recipes(conn, keep_id, merge_ids, new_title=None):
 
         title = (new_title or "").strip() or keep["title"]
         conn.execute(
-            "UPDATE recipes SET title = ?, image_filename = ?, updated_at = ? WHERE id = ?",
-            (title, image, now, keep_id),
+            "UPDATE recipes SET title = ?, image_filename = ?, image_is_placeholder = ?, updated_at = ? WHERE id = ?",
+            (title, image, placeholder, now, keep_id),
         )
 
         # The importer's "duplicate of X" notes on the keeper are resolved now.

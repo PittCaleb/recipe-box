@@ -76,6 +76,11 @@
       </div>
       {% endif %}
       <input type="file" name="image" accept="image/*">
+      {% if recipe and can_draw_pictures %}
+      <button type="submit" form="draw-image-form" class="link-button">
+        {{ 'Replace with a new AI drawing' if recipe['image_filename'] else 'Draw an AI picture' }}
+      </button>
+      {% endif %}
     </div>
 
     <div class="field">
@@ -129,6 +134,11 @@
       {% endif %}
     </div>
   </form>
+  {% if recipe and can_draw_pictures %}
+  {# Outside the edit form, like the delete form below. Unsaved edits are lost, so it asks first. #}
+  <form method="post" action="{{ url_for('edit.draw_image', recipe_id=recipe['id']) }}" id="draw-image-form"
+        data-confirm="{{ 'Replace this picture with a new AI drawing? The current one will be deleted, and' if recipe['image_filename'] else 'Draw an AI picture for this recipe? Any' }} unsaved changes on this page will be lost." hidden></form>
+  {% endif %}
   {% if recipe and can_delete_recipe() %}
   {# Outside the edit form: browsers drop a form nested in another, which made this button submit Save. #}
   <form method="post" action="{{ url_for('edit.delete', recipe_id=recipe['id']) }}" id="delete-recipe-form"
