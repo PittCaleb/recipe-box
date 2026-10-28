@@ -7,3 +7,5 @@ data/
 .pytest_cache/
 pdf/
 .env
+CLAUDE.local.md
+.coverage

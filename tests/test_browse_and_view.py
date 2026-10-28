@@ -54,7 +54,7 @@ def test_needs_review_filter(client, db):
 
 def test_recipe_view_shows_core_fields(client, db):
     rid = seed_recipe(
-        db, title="Rice Pilaf", contributor="Pat Cohen", servings="6 servings",
+        db, title="Rice Pilaf", contributor="Pat Lee", servings="6 servings",
         instructions_html="<p>Brown the rice.</p>",
     )
     seed_ingredient(db, rid, 0, "1 cup rice")
@@ -62,7 +62,7 @@ def test_recipe_view_shows_core_fields(client, db):
     resp = client.get(f"/recipes/{rid}")
     assert resp.status_code == 200
     assert b"Rice Pilaf" in resp.data
-    assert b"Pat Cohen" in resp.data
+    assert b"Pat Lee" in resp.data
     assert b"1 cup rice" in resp.data
     assert b"Brown the rice." in resp.data
 
