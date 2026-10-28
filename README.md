@@ -189,6 +189,15 @@ with `needs_review` set and a note that the instructions look cut off; you
 finish it by hand afterward (open the recipe, check the next page's scan if
 needed, and paste in the rest) via the normal edit screen.
 
+## Photos
+
+Add or replace a recipe's photo from the recipe page (**Replace image**) or
+the edit page. JPEG, PNG, WebP and iPhone HEIC all work, and everything is
+saved as a JPEG (with a thumbnail), turned the right way up and without the
+photo's location data. If a Live Photo arrives as just its short movie
+(sometimes still named `.HEIC`), the app uses the frame the iPhone marked as
+the photo.
+
 ## Placeholder pictures
 
 A recipe without a photo gets a drawn picture so the page doesn't look bare:
