@@ -48,6 +48,9 @@ alongside this file), never in a committed file. Tests and examples use made-up 
   - Before deploying a migration, copy the live database (from the latest backup archive on the NAS) to the scratchpad, run the
     migration against the copy, and render every page as admin and as a member.
   - Snapshot the live DB in the container right before deploying (command in `CLAUDE.local.md`).
+- **Photo uploads** (`app/images.py`): Pillow opens the file (HEIC via `pillow-heif`); if it can't and the file is a
+  QuickTime/MP4 movie, `app/live_photo.py` (PyAV) takes the Live Photo's marked still frame. Everything is saved as an sRGB
+  JPEG without metadata.
 - **Placeholder pictures** (`app/placeholder_images.py`, since 2026-10-28): a recipe saved without a photo, or imported from a
   PDF, gets a drawing from Sonnet in a background thread, rendered with `rsvg-convert` (in the Docker image). The style comes
   from `app/placeholder_examples/`; the model may only use plain shapes (`check_svg`). `image_is_placeholder` marks them;
