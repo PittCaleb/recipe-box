@@ -6,7 +6,7 @@ You are building a personal recipe web app for a single owner. The source materi
 
 **Work in phases (section 10) and stop for the owner's review where marked.** Don't skip ahead.
 
-- **Project root:** `~/projects/recipes`
+- **Project root:** the folder this repo is checked out in
 - **Source PDFs:** expected at `pdf/recipes.pdf` and `pdf/recipes2.pdf` under the project root. If they aren't there, search the project root for them and confirm the paths with the owner before starting.
 - **Host for now:** the owner's Mac, run manually from Terminal. Must be reachable from phones and tablets on the home Wi-Fi.
 - **Future host:** a Docker container on the owner's NAS. Don't build Docker now, but keep the app portable: no hard-coded absolute paths, all config from environment variables, and all mutable data under one data directory.
@@ -158,7 +158,7 @@ This is a separate step that runs before the web app is built. Its output is a p
 2. **Find scans.** Each recipe is at most one page, but a page may hold one or two recipe scans, side by side or stacked. View each page image yourself and record a crop box per recipe in `data/import/crops.json`.
 3. **Crop.** `importer/crop_scans.py` saves each scan as `data/scans/{pdfstem}-p{page:03d}-{a|b}.jpg`, with a max of 2000px on the long side.
 4. **Transcribe** each crop into `data/import/seed.json`. This file is an import artifact only; the database is the system of record. Rules:
-   - **Contributor:** everything from `recipes2.pdf` is `Pat Cohen`. For `recipes.pdf`, fill it only if a name is clearly shown on the card; otherwise leave it blank.
+   - **Contributor:** everything from `recipes2.pdf` is `Pat Lee`. For `recipes.pdf`, fill it only if a name is clearly shown on the card; otherwise leave it blank.
    - Keep the wording, spelling, and abbreviations **as written**. Don't modernize or "fix" anything.
    - **Ingredients:** one entry per line, exactly as written, into `raw_text`. Sub-group labels ("For the crust:") become `kind='heading'`. Do **not** split ingredients during import.
    - **Instructions:** simple `<p>` paragraphs matching the card's breaks. Use `<ol>`/`<ul>` only if the card is clearly numbered or bulleted.
@@ -288,7 +288,7 @@ The file is UTF-8 with a header line (app name, export timestamp, recipe count),
 RECIPE: Grandma's Pound Cake
 ID: 42
 CATEGORY: Desserts – Cakes
-CONTRIBUTOR: Pat Cohen
+CONTRIBUTOR: Pat Lee
 SOURCE:
 SERVINGS: 12
 PREP TIME:

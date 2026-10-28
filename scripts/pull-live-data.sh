@@ -11,15 +11,26 @@
 # data/backups/ before it's replaced.
 #
 # Local only: changes you make to this copy never go back to the NAS.
+#
+# Where the server is comes from the environment or .env (gitignored):
+#   RECIPES_NAS=user@host        how to ssh to the NAS
+#   RECIPES_NAS_DIR=/path        the folder holding dc.sh and data/recipes
 set -eu
-
-NAS="${RECIPES_NAS:-user@nas.local}"
-NAS_DIR=/share/Container/apps
-REMOTE_DATA="$NAS_DIR/data/recipes"
-SNAPSHOT=pull-snapshot.db
 
 cd "$(dirname "$0")/.."
 LOCAL_DATA=./data
+
+from_env_file() {
+    [ -f .env ] && sed -n "s/^$1=//p" .env | tail -n 1
+}
+NAS="${RECIPES_NAS:-$(from_env_file RECIPES_NAS)}"
+NAS_DIR="${RECIPES_NAS_DIR:-$(from_env_file RECIPES_NAS_DIR)}"
+if [ -z "$NAS" ] || [ -z "$NAS_DIR" ]; then
+    echo "Set RECIPES_NAS (user@host) and RECIPES_NAS_DIR (the folder with dc.sh) in .env first." >&2
+    exit 1
+fi
+REMOTE_DATA="$NAS_DIR/data/recipes"
+SNAPSHOT=pull-snapshot.db
 
 port="${RECIPES_PORT:-5052}"
 if lsof -nP -iTCP:"$port" -sTCP:LISTEN >/dev/null 2>&1; then
