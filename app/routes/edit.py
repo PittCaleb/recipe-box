@@ -9,6 +9,7 @@ from app.models.categories import list_categories
 from app.models.recipes import (
     delete_recipe, get_recipe, save_recipe, set_image_filename, split_guess, update_note,
 )
+from app.placeholder_images import start_placeholder_job
 from app.sanitize import sanitize_instructions
 from app.users import can_delete_note, can_delete_recipe, can_edit_recipe, current_user, is_admin, require
 
@@ -208,14 +209,18 @@ def create():
 
     recipe_id = save_recipe(db, None, {**fields, "owner_id": current_user()["id"]}, ingredients)
 
+    cfg = _cfg()
     image_file = request.files.get("image")
+    has_photo = False
     if image_file and image_file.filename:
-        cfg = _cfg()
         try:
             filename = save_recipe_image(image_file, cfg.IMAGES_DIR, recipe_id)
             set_image_filename(db, recipe_id, filename)
+            has_photo = True
         except InvalidImage as exc:
             flash(str(exc))
+    if not has_photo and start_placeholder_job(cfg, [recipe_id]):
+        flash("A placeholder picture is being drawn. It'll show up in a minute or so; add a real photo any time.")
 
     return redirect(url_for("recipe.view", recipe_id=recipe_id))
 
@@ -279,6 +284,18 @@ def upload_image(recipe_id):
         except InvalidImage as exc:
             flash(str(exc))
 
+    return redirect(url_for("recipe.view", recipe_id=recipe_id))
+
+
+@bp.route("/<int:recipe_id>/image/draw", methods=["POST"])
+def draw_image(recipe_id):
+    """Replaces the picture (photo or drawing) with a newly drawn one. Owners
+    and admins only, since the current picture is deleted."""
+    data = _get_editable_or_404(get_db(), recipe_id)
+    if start_placeholder_job(_cfg(), [recipe_id], replacing=data["recipe"]["image_filename"]):
+        flash("A new picture is being drawn. It'll replace this one in a minute or so; refresh to see it.")
+    else:
+        flash("ANTHROPIC_API_KEY isn't set, so pictures can't be drawn.")
     return redirect(url_for("recipe.view", recipe_id=recipe_id))
 
 
