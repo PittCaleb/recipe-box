@@ -75,7 +75,7 @@
         </label>
       </div>
       {% endif %}
-      <input type="file" name="image" accept="image/*">
+      <input type="file" name="image" accept="image/*,.heic,.heif">
       {% if recipe and can_draw_pictures %}
       <button type="submit" form="draw-image-form" class="link-button">
         {{ 'Replace with a new AI drawing' if recipe['image_filename'] else 'Draw an AI picture' }}
