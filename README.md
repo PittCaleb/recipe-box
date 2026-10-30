@@ -252,7 +252,9 @@ address it needs a sign-in.
 Each recipe in a list has `id`, `title`, `category` (`{id, name}` or null),
 `contributor`, `servings`, `prep_time`, `cook_time`, `image_url`,
 `image_is_placeholder`, `favorite`, `rating`, `last_made` (the asker's
-own) and `web_url`. The URLs are full addresses, so they work as they are.
+own), `slug` and `web_url`. The URLs are full addresses, so they work as they are.
+The API looks recipes up by `id`, which never changes; `slug` (and so
+`web_url`) changes when a recipe is renamed.
 An unknown recipe gets `404 {"error": "not found"}`.
 
 ## Tests

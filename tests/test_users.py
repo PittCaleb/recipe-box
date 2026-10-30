@@ -166,7 +166,7 @@ def test_signing_keys_come_from_the_team_domain(monkeypatch):
 def test_member_can_read_everything(member, db):
     rid = _recipe(db)
     assert member.get("/").status_code == 200
-    assert member.get(f"/recipes/{rid}").status_code == 200
+    assert member.get(f"/recipes/{rid}", follow_redirects=True).status_code == 200
     assert member.get("/admin/cookbook").status_code == 200
 
 
@@ -186,7 +186,7 @@ def test_member_can_add_a_recipe_and_owns_it(member, db):
     assert resp.status_code == 302
     row = db.execute("SELECT * FROM recipes WHERE title = ?", ("Pat's Pie",)).fetchone()
     assert row["owner_id"] == _user_id(db, "pat@example.com")
-    html = member.get(f"/recipes/{row['id']}").data.decode()
+    html = member.get(f"/recipes/{row['id']}", follow_redirects=True).data.decode()
     assert "Added by Pat" in html
 
 
@@ -194,7 +194,7 @@ def test_member_can_edit_own_recipe_but_not_delete_it(member, db):
     member.post("/recipes/new", data=_form("Pat's Pie"))
     rid = db.execute("SELECT id FROM recipes WHERE title = ?", ("Pat's Pie",)).fetchone()["id"]
 
-    html = member.get(f"/recipes/{rid}").data.decode()
+    html = member.get(f"/recipes/{rid}", follow_redirects=True).data.decode()
     assert f"/recipes/{rid}/edit" in html
     assert "Delete recipe" not in html
     assert member.get(f"/recipes/{rid}/edit").status_code == 200
@@ -209,7 +209,7 @@ def test_member_can_edit_own_recipe_but_not_delete_it(member, db):
 
 def test_member_cannot_edit_or_delete_someone_elses_recipe(member, db):
     rid = _recipe(db, "Owner's Pie")
-    html = member.get(f"/recipes/{rid}").data.decode()
+    html = member.get(f"/recipes/{rid}", follow_redirects=True).data.decode()
     assert f"/recipes/{rid}/edit" not in html
     assert "Added by Owner" in html
     assert member.get(f"/recipes/{rid}/edit").status_code == 403
@@ -249,7 +249,7 @@ def test_member_notes_and_who_may_delete_them(client, member, db):
     notes = {r["body"]: r for r in db.execute("SELECT * FROM notes WHERE recipe_id = ?", (rid,))}
     assert notes["Pat's note"]["author_id"] == _user_id(db, "pat@example.com")
 
-    html = member.get(f"/recipes/{rid}").data.decode()
+    html = member.get(f"/recipes/{rid}", follow_redirects=True).data.decode()
     assert "Pat&#39;s note" in html and "&middot; Pat" in html
     assert html.count("Delete this note?") == 1
 
@@ -274,7 +274,7 @@ def test_owner_editing_cannot_rewrite_other_peoples_notes(client, member, db):
 
 def test_photo_add_open_to_all_but_removal_is_owner_or_admin(member, db, cfg):
     rid = _recipe(db, image_filename="owner.jpg")
-    html = member.get(f"/recipes/{rid}").data.decode()
+    html = member.get(f"/recipes/{rid}", follow_redirects=True).data.decode()
     assert "Replace image" in html
     assert "Remove image" not in html
     assert member.post(f"/recipes/{rid}/image/delete").status_code == 403
@@ -288,7 +288,7 @@ def test_photo_add_open_to_all_but_removal_is_owner_or_admin(member, db, cfg):
 def test_favorites_and_made_are_per_person(client, member, db):
     rid = _recipe(db, favorite=1, last_made="2026-01-02")
 
-    html = member.get(f"/recipes/{rid}").data.decode()
+    html = member.get(f"/recipes/{rid}", follow_redirects=True).data.decode()
     assert 'aria-label="Add to favorites"' in html
     assert "You last made this" not in html
     assert b"Pie" not in member.get("/api/search?favorites=1").data
@@ -296,12 +296,12 @@ def test_favorites_and_made_are_per_person(client, member, db):
     member.post(f"/recipes/{rid}/favorite")
     member.post(f"/recipes/{rid}/made")
     assert b"Pie" in member.get("/api/search?favorites=1").data
-    assert "You last made this" in member.get(f"/recipes/{rid}").data.decode()
+    assert "You last made this" in member.get(f"/recipes/{rid}", follow_redirects=True).data.decode()
 
     client.post(f"/recipes/{rid}/favorite")  # The owner un-hearts; Pat's stays.
     assert b"Pie" not in client.get("/api/search?favorites=1").data
     assert b"Pie" in member.get("/api/search?favorites=1").data
-    assert "Jan 2, 2026" in client.get(f"/recipes/{rid}").data.decode()
+    assert "Jan 2, 2026" in client.get(f"/recipes/{rid}", follow_redirects=True).data.decode()
 
 
 def test_recently_made_sort_uses_your_own_dates(member, db):
@@ -321,7 +321,7 @@ def test_rating_is_per_person_and_clicking_again_clears_it(client, member, db):
         "SELECT rating FROM user_recipes WHERE recipe_id = ? AND user_id = ?", (rid, uid)
     ).fetchone()["rating"]
     assert (rating(1), rating(pat)) == (5, 3)
-    assert 'aria-label="Clear your rating"' in member.get(f"/recipes/{rid}").data.decode()
+    assert 'aria-label="Clear your rating"' in member.get(f"/recipes/{rid}", follow_redirects=True).data.decode()
     member.post(f"/recipes/{rid}/rating", data={"rating": "3"})
     assert rating(pat) is None
     assert member.post(f"/recipes/{rid}/rating", data={"rating": "9"}).status_code == 400

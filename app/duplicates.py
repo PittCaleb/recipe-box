@@ -3,6 +3,7 @@ import re
 from itertools import combinations
 
 from app.models.recipes import _category_name, _now, _sync_fts
+from app.slugs import assign_slug
 
 TITLE_STOPWORDS = {
     "a", "an", "and", "the", "of", "with", "recipe", "recipes", "my", "s",
@@ -239,6 +240,8 @@ def merge_recipes(conn, keep_id, merge_ids, new_title=None):
                 (keep_id, f"Merged in a duplicate copy: \"{o['title']}\"{origin}{contributor}.", now,
                  keep["owner_id"]),
             )
+            # Links to the removed copy now lead to the kept one.
+            conn.execute("UPDATE recipe_slugs SET recipe_id = ? WHERE recipe_id = ?", (keep_id, o["id"]))
             conn.execute("DELETE FROM recipes_fts WHERE rowid = ?", (o["id"],))
             conn.execute("DELETE FROM recipes WHERE id = ?", (o["id"],))
 
@@ -247,6 +250,8 @@ def merge_recipes(conn, keep_id, merge_ids, new_title=None):
             "UPDATE recipes SET title = ?, image_filename = ?, image_is_placeholder = ?, updated_at = ? WHERE id = ?",
             (title, image, placeholder, now, keep_id),
         )
+        if title != keep["title"]:
+            assign_slug(conn, keep_id, title)
 
         # The importer's "duplicate of X" notes on the keeper are resolved now.
         conn.execute(

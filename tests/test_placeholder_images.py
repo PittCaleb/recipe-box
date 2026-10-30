@@ -327,10 +327,10 @@ def test_only_owner_or_admin_can_redraw(member, db, cfg, fake_placeholder_drawin
 
 def test_redraw_button_shows_only_with_a_key(client, db, cfg):
     rid = seed_recipe(db, title="Buttons", image_filename="recipe-1-photo.jpg")
-    assert b"new AI drawing" not in client.get(f"/recipes/{rid}").data
+    assert b"new AI drawing" not in client.get(f"/recipes/{rid}", follow_redirects=True).data
     assert b"new AI drawing" not in client.get(f"/recipes/{rid}/edit").data
     cfg.ANTHROPIC_API_KEY = "test-key-not-real"
-    assert b"Replace with a new AI drawing" in client.get(f"/recipes/{rid}").data
+    assert b"Replace with a new AI drawing" in client.get(f"/recipes/{rid}", follow_redirects=True).data
     assert b"Replace with a new AI drawing" in client.get(f"/recipes/{rid}/edit").data
 
 

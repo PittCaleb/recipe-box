@@ -59,7 +59,7 @@ def test_recipe_page_and_search_show_the_split_not_the_old_line(client, db):
         {"kind": "item", "raw_text": "4 sq. semisweet chocolate", "is_split": 1,
          "quantity": 2.0, "unit": "oz", "item": "semisweet chocolate squares", "no_scale": 0},
     ])
-    html = client.get(f"/recipes/{rid}").data.decode()
+    html = client.get(f"/recipes/{rid}", follow_redirects=True).data.decode()
     assert "2 oz semisweet chocolate squares" in html
     assert "4 sq." not in html
     assert b"Mousse" in client.get("/api/search?q=squares").data
@@ -84,7 +84,7 @@ def test_new_recipe_from_split_fields_only(client, db):
     assert rows[1]["is_split"] == 1 and rows[1]["quantity"] == 2.0
     assert rows[3]["is_split"] == 0 and rows[3]["no_scale"] == 1
 
-    page = client.get(f"/recipes/{rid}").data.decode()
+    page = client.get(f"/recipes/{rid}", follow_redirects=True).data.decode()
     assert "2 cups Heavy Whipping Cream" in page
     assert "adjust-slider" in page
     assert "(not scaled)" not in page
