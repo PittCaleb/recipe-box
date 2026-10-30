@@ -37,3 +37,10 @@ def test_no_prefix_when_run_directly(client, db):
 
 def test_session_cookie_name_is_app_specific(app):
     assert app.config["SESSION_COOKIE_NAME"] == "recipes_session"
+
+
+def test_favicons_are_linked_within_prefix(client, db):
+    html = client.get("/", headers=PREFIX).get_data(as_text=True)
+    for name in ("favicon.svg", "favicon-32.png", "apple-touch-icon.png"):
+        assert f'href="/recipes/static/icons/{name}"' in html
+        assert client.get(f"/static/icons/{name}").status_code == 200
