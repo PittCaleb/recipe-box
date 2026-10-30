@@ -65,7 +65,7 @@ def test_image_404_for_missing_recipe(client, db, cfg):
 
 def test_recipe_page_has_export_controls_and_no_email_or_text(client, db, cfg):
     rid = _printable(db)
-    resp = client.get(f"/recipes/{rid}")
+    resp = client.get(f"/recipes/{rid}", follow_redirects=True)
     assert b"Save PDF" in resp.data
     assert f"/recipes/{rid}/image?download=1".encode() in resp.data
     assert b'id="copy-image-btn" hidden' in resp.data

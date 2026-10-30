@@ -149,7 +149,7 @@ def test_update_recipe_search_index_follows_title_change(client, db):
 def test_recipe_view_shows_delete_button_when_authenticated(client, db):
     rid = seed_recipe(db, title="Deletable From View")
     sync_fts(db, rid, "Deletable From View")
-    resp = client.get(f"/recipes/{rid}")
+    resp = client.get(f"/recipes/{rid}", follow_redirects=True)
     assert f'/recipes/{rid}/delete'.encode() in resp.data
     assert b'aria-label="Delete recipe"' in resp.data
 

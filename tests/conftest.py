@@ -7,6 +7,7 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 
 from app import create_app
 from app.db import get_connection
+from app.slugs import assign_slug
 from config import Config
 
 
@@ -131,6 +132,7 @@ def seed_recipe(conn, **overrides):
         f"INSERT INTO recipes ({cols}) VALUES ({placeholders})",
         list(defaults.values()),
     )
+    assign_slug(conn, cur.lastrowid, defaults["title"])
     if personal:
         seed_personal(conn, cur.lastrowid, **personal)
     conn.commit()

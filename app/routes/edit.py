@@ -10,6 +10,7 @@ from app.models.recipes import (
     delete_recipe, get_recipe, save_recipe, set_image_filename, split_guess, update_note,
 )
 from app.placeholder_images import start_placeholder_job
+from app.routes.recipe import recipe_url
 from app.sanitize import sanitize_instructions
 from app.users import can_delete_note, can_delete_recipe, can_edit_recipe, current_user, is_admin, require
 
@@ -222,7 +223,7 @@ def create():
     if not has_photo and start_placeholder_job(cfg, [recipe_id]):
         flash("A placeholder picture is being drawn. It'll show up in a minute or so; add a real photo any time.")
 
-    return redirect(url_for("recipe.view", recipe_id=recipe_id))
+    return redirect(recipe_url(recipe_id))
 
 
 @bp.route("/<int:recipe_id>", methods=["POST"])
@@ -262,7 +263,7 @@ def update(recipe_id):
         except InvalidImage as exc:
             flash(str(exc))
 
-    return redirect(url_for("recipe.view", recipe_id=recipe_id))
+    return redirect(recipe_url(recipe_id))
 
 
 @bp.route("/<int:recipe_id>/image", methods=["POST"])
@@ -284,7 +285,7 @@ def upload_image(recipe_id):
         except InvalidImage as exc:
             flash(str(exc))
 
-    return redirect(url_for("recipe.view", recipe_id=recipe_id))
+    return redirect(recipe_url(recipe_id))
 
 
 @bp.route("/<int:recipe_id>/image/draw", methods=["POST"])
@@ -296,7 +297,7 @@ def draw_image(recipe_id):
         flash("A new picture is being drawn. It'll replace this one in a minute or so; refresh to see it.")
     else:
         flash("ANTHROPIC_API_KEY isn't set, so pictures can't be drawn.")
-    return redirect(url_for("recipe.view", recipe_id=recipe_id))
+    return redirect(recipe_url(recipe_id))
 
 
 @bp.route("/<int:recipe_id>/image/delete", methods=["POST"])
@@ -307,7 +308,7 @@ def remove_image(recipe_id):
     if data["recipe"]["image_filename"]:
         delete_recipe_image(cfg.IMAGES_DIR, data["recipe"]["image_filename"])
         set_image_filename(db, recipe_id, None)
-    return redirect(url_for("recipe.view", recipe_id=recipe_id))
+    return redirect(recipe_url(recipe_id))
 
 
 @bp.route("/<int:recipe_id>/delete", methods=["POST"])

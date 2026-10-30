@@ -85,7 +85,8 @@ def _summary(r):
         "favorite": bool(r["favorite"]),
         "rating": r["rating"],
         "last_made": r["last_made"],
-        "web_url": url_for("recipe.view", recipe_id=r["id"], _external=True),
+        "slug": r["slug"],
+        "web_url": url_for("recipe.view", slug=r["slug"], _external=True),
     }
 
 
