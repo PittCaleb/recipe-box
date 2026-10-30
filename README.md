@@ -237,6 +237,24 @@ you like:
   appears when the app is opened that way (e.g. `http://127.0.0.1:5050` on
   the Mac itself). On a phone using the LAN address, use **Save image**.
 
+## JSON API (for other apps)
+
+A small read-only API, there for a TV app. It answers the same way the
+pages do: from a home address it acts as the owner; through the public
+address it needs a sign-in.
+
+| Request | Returns |
+|---|---|
+| `GET /api/v1/recipes` | `{"total": n, "recipes": [...]}`: every recipe, by name. Narrow it with `?q=` (search, best match first), `?category=<id>`, `?favorites=1`; order it with `?sort=name\|category\|recent_made\|recent_added` |
+| `GET /api/v1/recipes/<id>` | One recipe: the list fields plus `source`, `owner`, `ingredients` (`kind` is `item` or `heading`, plus `text`), `steps` (the instructions as plain-text steps), `instructions_html` and `notes` |
+| `GET /api/v1/categories` | `{"categories": [{"id", "name", "recipe_count"}]}` in menu order |
+
+Each recipe in a list has `id`, `title`, `category` (`{id, name}` or null),
+`contributor`, `servings`, `prep_time`, `cook_time`, `image_url`,
+`image_is_placeholder`, `favorite`, `rating`, `last_made` (the asker's
+own) and `web_url`. The URLs are full addresses, so they work as they are.
+An unknown recipe gets `404 {"error": "not found"}`.
+
 ## Tests
 
 ```bash

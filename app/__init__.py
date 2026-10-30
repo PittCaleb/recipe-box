@@ -42,6 +42,7 @@ def create_app(config_obj=None):
     from app.routes.import_pdf import bp as import_pdf_bp
     from app.routes.duplicates import bp as duplicates_bp
     from app.routes.help import bp as help_bp
+    from app.routes.api import bp as api_bp
     app.register_blueprint(browse_bp)
     app.register_blueprint(recipe_bp)
     app.register_blueprint(media_bp)
@@ -51,6 +52,7 @@ def create_app(config_obj=None):
     app.register_blueprint(import_pdf_bp)
     app.register_blueprint(duplicates_bp)
     app.register_blueprint(help_bp)
+    app.register_blueprint(api_bp)
 
     from app import users
     app.before_request(users.load_user)
