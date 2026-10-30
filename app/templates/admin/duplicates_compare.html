@@ -31,7 +31,7 @@
         </label>
       </div>
 
-      <h2 class="dup-title"><a href="{{ url_for('recipe.view', recipe_id=r.id) }}" target="_blank" rel="noopener">{{ r.title }}</a></h2>
+      <h2 class="dup-title"><a href="{{ url_for('recipe.view', slug=r.slug) }}" target="_blank" rel="noopener">{{ r.title }}</a></h2>
       <dl class="dup-meta">
         <dt>Category</dt><dd>{{ r.category_name or '—' }}</dd>
         <dt>Contributor</dt><dd>{{ r.contributor or '—' }}</dd>

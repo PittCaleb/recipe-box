@@ -128,7 +128,7 @@
 
     <div class="edit-form-actions">
       <button type="submit" class="btn btn-primary">Save</button>
-      <a class="btn btn-secondary" href="{{ url_for('recipe.view', recipe_id=recipe['id']) if recipe else url_for('browse.index') }}">Cancel</a>
+      <a class="btn btn-secondary" href="{{ url_for('recipe.view', slug=recipe['slug']) if recipe else url_for('browse.index') }}">Cancel</a>
       {% if recipe and can_delete_recipe() %}
       <button type="submit" form="delete-recipe-form" class="btn btn-danger">Delete recipe</button>
       {% endif %}

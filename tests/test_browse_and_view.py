@@ -59,7 +59,7 @@ def test_recipe_view_shows_core_fields(client, db):
     )
     seed_ingredient(db, rid, 0, "1 cup rice")
     sync_fts(db, rid, "Rice Pilaf")
-    resp = client.get(f"/recipes/{rid}")
+    resp = client.get(f"/recipes/{rid}", follow_redirects=True)
     assert resp.status_code == 200
     assert b"Rice Pilaf" in resp.data
     assert b"Pat Lee" in resp.data
@@ -70,7 +70,7 @@ def test_recipe_view_shows_core_fields(client, db):
 def test_recipe_view_hides_empty_fields(client, db):
     rid = seed_recipe(db, title="Bare Recipe", contributor=None, source=None, servings=None)
     sync_fts(db, rid, "Bare Recipe")
-    resp = client.get(f"/recipes/{rid}")
+    resp = client.get(f"/recipes/{rid}", follow_redirects=True)
     assert b"Source:" not in resp.data
     assert b"Servings:" not in resp.data
 
@@ -308,10 +308,10 @@ def test_active_worklist_chip_stays_visible_even_when_empty(client, db):
 
 def test_recipe_page_heart_reflects_favorite(client, db):
     rid = _make_recipe(db, title="Loved")
-    html = client.get(f"/recipes/{rid}").data.decode()
+    html = client.get(f"/recipes/{rid}", follow_redirects=True).data.decode()
     assert 'aria-label="Add to favorites"' in html
     client.post(f"/recipes/{rid}/favorite")
-    html = client.get(f"/recipes/{rid}").data.decode()
+    html = client.get(f"/recipes/{rid}", follow_redirects=True).data.decode()
     assert 'aria-label="Remove from favorites"' in html
     assert "favorite-toggle is-active" in html
     actions = html[html.index('class="recipe-actions'):]
