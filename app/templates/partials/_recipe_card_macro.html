@@ -1,7 +1,7 @@
 {% from "_icons.html" import icon %}
 
 {% macro recipe_card(r) %}
-<a class="recipe-card" href="{{ url_for('recipe.view', recipe_id=r['id']) }}">
+<a class="recipe-card" href="{{ url_for('recipe.view', slug=r['slug']) }}">
   {% if r['image_filename'] %}
     <img class="recipe-card-thumb" src="{{ url_for('media.image', filename=thumb_filename(r['image_filename'])) }}" alt="">
   {% else %}
