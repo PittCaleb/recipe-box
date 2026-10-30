@@ -1,4 +1,6 @@
+import importlib.util
 import io
+from pathlib import Path
 
 from PIL import Image
 
@@ -73,6 +75,39 @@ def test_edit_form_prefills_existing_recipe(client, db):
     assert resp.status_code == 200
     assert b"Existing Dish" in resp.data
     assert b"2 eggs" in resp.data
+
+
+BLANKABLE_FIELDS = ("contributor", "source", "servings", "prep_time", "cook_time")
+
+
+def test_edit_form_leaves_blank_fields_blank(client, db):
+    # Blank fields once came back as the word "None", which saving then stored.
+    rid = seed_recipe(db, title="Sparse Dish")
+    html = client.get(f"/recipes/{rid}/edit").get_data(as_text=True)
+    for field in BLANKABLE_FIELDS:
+        assert f'name="{field}" value=""' in html
+
+
+def test_migration_clears_none_text(db):
+    rid = seed_recipe(db, title="Old Edit", contributor="None", source="None", servings="None",
+                      prep_time="15 min", cook_time="None")
+    sync_fts(db, rid, "Old Edit", contributor="None")
+    kept = seed_recipe(db, title="Kept", contributor="Pat", servings="4")
+    sync_fts(db, kept, "Kept", contributor="Pat")
+
+    path = Path(__file__).parent.parent / "app/migrations/007_clear_none_text.py"
+    spec = importlib.util.spec_from_file_location("m007", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    module.migrate(db)
+    db.commit()
+
+    row = db.execute("SELECT * FROM recipes WHERE id=?", (rid,)).fetchone()
+    assert [row[f] for f in BLANKABLE_FIELDS] == [None, None, None, "15 min", None]
+    other = db.execute("SELECT contributor, servings FROM recipes WHERE id=?", (kept,)).fetchone()
+    assert tuple(other) == ("Pat", "4")
+    assert db.execute("SELECT rowid FROM recipes_fts WHERE recipes_fts MATCH 'none'").fetchall() == []
+    assert [r[0] for r in db.execute("SELECT rowid FROM recipes_fts WHERE recipes_fts MATCH 'old'")] == [rid]
 
 
 def test_update_recipe_replaces_ingredients(client, db):

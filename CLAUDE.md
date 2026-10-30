@@ -39,12 +39,12 @@ alongside this file), never in a committed file. Tests and examples use made-up 
   use `url_for`; never hard-code paths.** The session cookie is `recipes_session`, since all apps share one hostname, and it only
   carries flash messages.
 - **Blueprints** in `app/routes/`: browse (`/`, `/api/search`), recipe (view, favorite, made, rating, notes), edit (new, edit,
-  delete, images), share (PDF/PNG), media, help, and the admin-only `admin`, `import_pdf` (Claude-powered PDF import) and
-  `duplicates`.
+  delete, images), share (PDF/PNG), media, help, `api` (read-only JSON at `/api/v1/`, for the TV app; see README),
+  and the admin-only `admin`, `import_pdf` (Claude-powered PDF import) and `duplicates`.
 - **Models:** `app/models/recipes.py`. `search_recipes(..., user_id)` and `get_recipe(conn, id, user_id)` join the person's own
   `user_recipes` row in as `favorite` / `rating` / `last_made`, so templates read `r['favorite']` as before.
 - **Migrations:** `app/migrations/NNN_name.sql`, or `.py` with a `migrate(conn)` that doesn't commit. They run automatically on
-  startup, recorded in `schema_version`. Next number: **007**.
+  startup, recorded in `schema_version`. Next number: **008**.
   - Before deploying a migration, copy the live database (from the latest backup archive on the NAS) to the scratchpad, run the
     migration against the copy, and render every page as admin and as a member.
   - Snapshot the live DB in the container right before deploying (command in `CLAUDE.local.md`).
