@@ -3,6 +3,7 @@ from datetime import date
 
 from app.ingredients.parser import parse_ingredient
 from app.ingredients.scaling import format_ingredient_line
+from app.slugs import assign_slug
 
 
 def split_guess(raw_text):
@@ -288,7 +289,9 @@ def save_recipe(conn, recipe_id, fields, ingredients):
                 ),
             )
             recipe_id = cur.lastrowid
+            assign_slug(conn, recipe_id, fields["title"])
         else:
+            old_title = conn.execute("SELECT title FROM recipes WHERE id = ?", (recipe_id,)).fetchone()[0]
             conn.execute(
                 """UPDATE recipes SET
                    title=?, category_id=?, contributor=?, source=?, servings=?, prep_time=?,
@@ -302,6 +305,8 @@ def save_recipe(conn, recipe_id, fields, ingredients):
                 ),
             )
             conn.execute("DELETE FROM ingredients WHERE recipe_id = ?", (recipe_id,))
+            if fields["title"] != old_title:
+                assign_slug(conn, recipe_id, fields["title"])
 
         for pos, ing in enumerate(ingredients):
             ing = normalize_ingredient(ing)

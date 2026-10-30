@@ -12,7 +12,7 @@
           <ul class="text-list">
             {% for r in rows %}
             <li class="text-list-row">
-              <a href="{{ url_for('recipe.view', recipe_id=r['id']) }}" class="text-list-link">
+              <a href="{{ url_for('recipe.view', slug=r['slug']) }}" class="text-list-link">
                 {% if r['favorite'] %}<span class="text-list-fav" aria-label="Favorite">{{ icon('heart-filled', 13) }}</span>{% endif %}
                 <span class="text-list-title">{{ r['title'] }}</span>
                 {% if params.group != 'category' and r['category_name'] %}<span class="text-list-cat">{{ r['category_name'] }}</span>{% endif %}

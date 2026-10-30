@@ -88,4 +88,4 @@ def test_other_file_types_are_refused(client, db):
 def test_upload_fields_offer_heic_files(client, db):
     rid = seed_recipe(db, title="Picker")
     for page in (f"/recipes/{rid}", f"/recipes/{rid}/edit"):
-        assert b'accept="image/*,.heic,.heif"' in client.get(page).data
+        assert b'accept="image/*,.heic,.heif"' in client.get(page, follow_redirects=True).data

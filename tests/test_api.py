@@ -51,7 +51,8 @@ def test_list_entry_has_what_a_card_needs(client, db):
         "favorite": True,
         "rating": 4,
         "last_made": "2026-10-01",
-        "web_url": f"http://localhost/recipes/{rid}",
+        "slug": "banana-bread",
+        "web_url": "http://localhost/banana-bread",
     }
 
 
@@ -69,7 +70,7 @@ def test_links_include_the_proxy_prefix(client, db):
     resp = client.get("/api/v1/recipes", headers={"X-Forwarded-Prefix": "/recipes", "X-Forwarded-Proto": "https"})
     entry = resp.get_json()["recipes"][0]
     assert entry["image_url"] == "https://localhost/recipes/media/images/bread.jpg"
-    assert entry["web_url"] == f"https://localhost/recipes/recipes/{rid}"
+    assert entry["web_url"] == "https://localhost/recipes/banana-bread"
 
 
 def test_search(client, db):
@@ -158,7 +159,8 @@ def test_recipe_detail(client, db):
     assert data["instructions_html"] == "<ol><li>Mix.</li><li>Fry.</li></ol>"
     assert [n["body"] for n in data["notes"]] == ["Double it"]
     assert data["notes"][0]["created_at"] == "2026-10-01T09:00:00"
-    assert data["web_url"].endswith(f"/recipes/{rid}")
+    assert data["slug"] == "pancakes"
+    assert data["web_url"] == "http://localhost/pancakes"
 
 
 def test_missing_recipe_is_a_json_404(client, db):
