@@ -44,3 +44,34 @@ def test_favicons_are_linked_within_prefix(client, db):
     for name in ("favicon.svg", "favicon-32.png", "apple-touch-icon.png"):
         assert f'href="/recipes/static/icons/{name}"' in html
         assert client.get(f"/static/icons/{name}").status_code == 200
+
+
+def test_waitress_keeps_https_from_the_proxy(app, db):
+    """Through the real server, as Caddy sends it: links come back https://."""
+    import json
+    import threading
+    import urllib.request
+
+    from waitress import create_server
+
+    from run import SERVE_OPTIONS
+
+    seed_recipe(db, title="Brownies", image_filename="brownies.jpg")
+    server = create_server(app, host="127.0.0.1", port=0, **SERVE_OPTIONS)
+
+    def run():
+        try:
+            server.run()
+        except OSError:  # close() below pulls the socket out from under the loop
+            pass
+    threading.Thread(target=run, daemon=True).start()
+    try:
+        req = urllib.request.Request(
+            f"http://127.0.0.1:{server.effective_port}/api/v1/recipes",
+            headers={**PREFIX, "Host": "localhost", "X-Forwarded-Proto": "https", "X-Forwarded-Host": "localhost"},
+        )
+        entry = json.load(urllib.request.urlopen(req))["recipes"][0]
+    finally:
+        server.close()
+    assert entry["web_url"] == "https://localhost/recipes/brownies"
+    assert entry["image_url"] == "https://localhost/recipes/media/images/brownies.jpg"

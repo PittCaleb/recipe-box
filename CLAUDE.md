@@ -36,8 +36,9 @@ alongside this file), never in a committed file. Tests and examples use made-up 
 
 - **App factory:** `app/__init__.py`. It applies
   `ProxyFix(x_for, x_proto, x_host, x_prefix)`, because Caddy strips `/recipes` and sends `X-Forwarded-Prefix`. So **always
-  use `url_for`; never hard-code paths.** The session cookie is `recipes_session`, since all apps share one hostname, and it only
-  carries flash messages.
+  use `url_for`; never hard-code paths.** `run.py` serves with waitress, and `SERVE_OPTIONS` stops it dropping
+  `X-Forwarded-Proto`/`Host`/`For` before ProxyFix sees them (without it, links built over HTTPS come back `http://`).
+  The session cookie is `recipes_session`, since all apps share one hostname, and it only carries flash messages.
 - **Blueprints** in `app/routes/`: browse (`/`, `/api/search`), recipe (view, favorite, made, rating, notes), edit (new, edit,
   delete, images), share (PDF/PNG), media, help, `api` (read-only JSON at `/api/v1/`, for the TV app; see README),
   and the admin-only `admin`, `import_pdf` (Claude-powered PDF import) and `duplicates`.
