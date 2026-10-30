@@ -100,7 +100,7 @@ def _shopping_json(html):
 
 def test_page_has_button_per_shoppable_line_and_add_all(client, db):
     rid = _recipe(db, ["2 cups cream", "salt to taste", "3 eggs"])
-    html = client.get(f"/recipes/{rid}").data.decode()
+    html = client.get(f"/recipes/{rid}", follow_redirects=True).data.decode()
     assert html.count('class="icon-btn icon-btn--sm shop-btn') == 2
     assert 'data-shop-index="1"' not in html
     assert 'id="shop-all-btn"' in html
@@ -114,7 +114,7 @@ def test_page_has_button_per_shoppable_line_and_add_all(client, db):
 
 def test_scalable_recipe_has_entries_for_every_slider_stop(client, db):
     rid = _recipe(db, ["2 cups cream", "3 eggs"], split=True)
-    data = _shopping_json(client.get(f"/recipes/{rid}").data.decode())
+    data = _shopping_json(client.get(f"/recipes/{rid}", follow_redirects=True).data.decode())
     assert len(data["stops"]) == len(MULTIPLIER_STOPS)
     half = data["stops"][MULTIPLIER_STOPS.index(0.5)]
     assert half["items"] == ["Cream (1 cup)", "Eggs (1 ½)"]
@@ -122,14 +122,14 @@ def test_scalable_recipe_has_entries_for_every_slider_stop(client, db):
 
 def test_no_shopping_controls_when_nothing_has_an_amount(client, db):
     rid = _recipe(db, ["salt to taste", "pepper"])
-    html = client.get(f"/recipes/{rid}").data.decode()
+    html = client.get(f"/recipes/{rid}", follow_redirects=True).data.decode()
     assert "shop-all-btn" not in html
     assert "shopping-data" not in html
 
 
 def test_setup_modal_and_help_link_present(client, db):
     rid = _recipe(db, ["2 cups cream"])
-    html = client.get(f"/recipes/{rid}").data.decode()
+    html = client.get(f"/recipes/{rid}", follow_redirects=True).data.decode()
     assert 'id="shop-setup-modal"' in html
     assert "/help/shopping-list" in html
 

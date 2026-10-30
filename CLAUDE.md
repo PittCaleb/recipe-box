@@ -44,10 +44,16 @@ alongside this file), never in a committed file. Tests and examples use made-up 
 - **Models:** `app/models/recipes.py`. `search_recipes(..., user_id)` and `get_recipe(conn, id, user_id)` join the person's own
   `user_recipes` row in as `favorite` / `rating` / `last_made`, so templates read `r['favorite']` as before.
 - **Migrations:** `app/migrations/NNN_name.sql`, or `.py` with a `migrate(conn)` that doesn't commit. They run automatically on
-  startup, recorded in `schema_version`. Next number: **008**.
+  startup, recorded in `schema_version`. Next number: **009**.
   - Before deploying a migration, copy the live database (from the latest backup archive on the NAS) to the scratchpad, run the
     migration against the copy, and render every page as admin and as a member.
   - Snapshot the live DB in the container right before deploying (command in `CLAUDE.local.md`).
+- **Recipe addresses** (`app/slugs.py`, since 2026-10-30): a recipe's page is `/<slug>` at the app's top level (so
+  `…/recipes/brownies` behind the proxy). Its actions stay at `/recipes/<id>/…`, and the old `/recipes/<id>` page address
+  301s to the slug. `save_recipe` sets the slug on create and on a title change; same titles get `-2`, `-3`, and `RESERVED`
+  words are skipped. Every slug a recipe has had stays in `recipe_slugs`, so old links redirect and nobody else takes them;
+  merging moves the removed copy's slugs to the kept recipe. Link with `url_for('recipe.view', slug=r['slug'])`, or
+  `recipe_url(id)` from a route. A new top-level route needs its word added to `RESERVED`.
 - **Photo uploads** (`app/images.py`): Pillow opens the file (HEIC via `pillow-heif`); if it can't and the file is a
   QuickTime/MP4 movie, `app/live_photo.py` (PyAV) takes the Live Photo's marked still frame. Everything is saved as an sRGB
   JPEG without metadata.
