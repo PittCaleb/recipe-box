@@ -32,7 +32,7 @@ fi
 REMOTE_DATA="$NAS_DIR/data/recipes"
 SNAPSHOT=pull-snapshot.db
 
-port="${RECIPES_PORT:-5052}"
+port="${RECIPES_PORT:-5050}"
 if lsof -nP -iTCP:"$port" -sTCP:LISTEN >/dev/null 2>&1; then
     echo "Something is running on port $port (the local app?). Stop it first, then run this again." >&2
     exit 1
