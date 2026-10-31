@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}About{% endblock %}
+{% block content %}
+<article class="help-page">
+  <h1>About</h1>
+
+  <h2>About the author</h2>
+  <p>
+    Written by Caleb Cohen (<a href="https://github.com/PittCaleb">GitHub</a>,
+    <a href="https://x.com/PittCaleb">@PittCaleb</a>).
+  </p>
+  <p>
+    For years, my recipes lived in three PDF files on Dropbox: Recipes.pdf, Recipes2.pdf and Recipes3.pdf. About half
+    of them were handwritten, and none of them were searchable. Finding a recipe meant scrolling through the files on my
+    phone, then keeping the screen on the entire time I cooked. The files also held duplicates and, worse, conflicting
+    versions of the same dish, with no way to tell which one was right.
+  </p>
+  <p>
+    One day I asked Claude whether it could read those files and turn them into a single Google Doc that I could clean
+    up and search.
+  </p>
+  <p>
+    That request grew into this app. At first it ran on my laptop, which meant keeping a laptop open in the kitchen, an
+    even worse experience than a phone or tablet. So I moved it to a home server, where everyone in the house could reach
+    the same live recipes. The natural next step was to make it available over the internet, so I could use it away
+    from home and share it with friends and family. That, in turn, meant supporting multiple users.
+  </p>
+  <p>
+    Once the site was where I wanted it, I tried it in a web browser on the TV, so I could follow recipes from the
+    adjoining kitchen. TV web browsers are not built for this. So I asked Claude, &ldquo;How hard would it be to create an
+    Android TV app that uses the recipe app&rsquo;s API?&rdquo; Seventy minutes later, a <a href="https://github.com/PittCaleb/Recipes-TV">polished app</a> was running on the
+    big screen.
+  </p>
+  <p>
+    I have since deleted the original PDFs and rely on this app entirely for my cookbook. As a safeguard, its export
+    feature (<a href="{{ url_for('admin.cookbook') }}">Print cookbook</a> in the menu) combined those three PDFs into a
+    single, consistently formatted cookbook.
+  </p>
+
+  <h2>Thank you, and an invitation</h2>
+  <p>
+    Thank you for using the app. I hope you enjoy it.
+  </p>
+  <p>
+    The goal is not a single, universal recipe book with one shared library for the world. The app is designed for small
+    groups and families who want to keep their own recipes together in one place.
+  </p>
+  <p>
+    Contributions are welcome. To propose a change, create a branch and open a pull request on
+    <a href="https://github.com/PittCaleb/recipe-box">GitHub</a>. I would like to grow the project into something more
+    complete and useful for others. I am open to new features of every kind and would be glad to have more contributors.
+  </p>
+  <p class="hint">
+    Built with Claude Code running Claude Opus 5.5. Open source under the
+    <a href="https://github.com/PittCaleb/recipe-box/blob/main/LICENSE">MIT License</a>.
+  </p>
+</article>
+{% endblock %}

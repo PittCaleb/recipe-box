@@ -13,3 +13,7 @@ pdf
 tests
 .env
 .DS_Store
+
+# Docs and private notes stay out of the image (CLAUDE.local.md is gitignored, but
+# a local docker build would copy it in).
+**/*.md

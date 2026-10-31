@@ -143,3 +143,13 @@ def test_help_page_open_to_everyone(member, db):
 
 def test_menu_links_to_help(client, db):
     assert b"/help/shopping-list" in client.get("/").data
+
+
+def test_about_page_open_to_everyone_and_in_the_menu(member, db):
+    resp = member.get("/about")
+    assert resp.status_code == 200
+    html = resp.data.decode()
+    assert "About the author" in html
+    assert "https://github.com/PittCaleb" in html
+    menu = member.get("/").data.decode()
+    assert menu.index('href="/about"') < menu.index('href="/help/shopping-list"')
