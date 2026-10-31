@@ -35,7 +35,7 @@ addresses.
   `X-Forwarded-Proto`/`Host`/`For` before ProxyFix sees them (without it, links built over HTTPS come back `http://`).
   The session cookie is `recipes_session`, since all apps share one hostname, and it only carries flash messages.
 - **Blueprints** in `app/routes/`: browse (`/`, `/api/search`), recipe (view, favorite, made, rating, notes), edit (new, edit,
-  delete, images), share (PDF/PNG), media, help, `api` (read-only JSON at `/api/v1/`, for the TV app; see README),
+  delete, images), share (PDF/PNG), media, help (`/about` and `/help/…`), `api` (read-only JSON at `/api/v1/`, for the TV app; see README),
   and the admin-only `admin`, `import_pdf` (Claude-powered PDF import) and `duplicates`.
 - **JSON API:** a separate TV app relies on it. Keep it read-only and backwards compatible (add fields, don't rename them),
   and keep README's "JSON API" section up to date; it's the reference.
