@@ -282,3 +282,9 @@ copy**; data on a development machine is only a copy, refreshed with
   before starting the image that needs it; restart to change one.
 - Migrations run by themselves when the container starts.
 - Copy files to the server with `rsync`; it has no SFTP, so `scp` fails.
+
+## License and credits
+
+MIT License (see [LICENSE](LICENSE)): free to use, change and share, as long as the copyright notice and license
+stay with the code. Written by Caleb Cohen ([PittCaleb](https://github.com/PittCaleb)), built with Claude Code
+running Claude Opus 5.5. Contributions are welcome; see [CONTRIBUTING.md](CONTRIBUTING.md).
