@@ -1,3 +1,5 @@
+import json
+
 from tests.conftest import seed_ingredient, seed_recipe, sync_fts
 
 
@@ -324,3 +326,42 @@ def test_clear_filters_button_only_when_a_filter_is_on(client, db):
     assert b'id="clear-filters"\n            hidden' in client.get("/?display=text&group=category").data
     for query in ("q=cake", "favorites=1", "needs_split=1", "sort=recent_made", "category=1"):
         assert b'id="clear-filters"\n            hidden' not in client.get(f"/?{query}").data, query
+
+
+def _cook_steps(html):
+    start = html.index('<script type="application/json" id="cook-steps">') + len(
+        '<script type="application/json" id="cook-steps">'
+    )
+    return json.loads(html[start:html.index("</script>", start)])
+
+
+def test_recipe_page_offers_cook_mode_with_its_steps(client, db):
+    rid = _make_recipe(db, title="Pancakes", instructions_html="<ol><li>Mix the batter.</li><li>Fry at 350&deg;.</li></ol>")
+    html = client.get(f"/recipes/{rid}", follow_redirects=True).data.decode()
+    assert html.count("data-cook-start") == 2
+    assert 'id="cook"' in html
+    assert _cook_steps(html) == ["Mix the batter.", "Fry at 350°."]
+
+
+def test_recipe_page_without_steps_has_no_cook_mode(client, db):
+    rid = _make_recipe(db, title="Empty", instructions_html="")
+    html = client.get(f"/recipes/{rid}", follow_redirects=True).data.decode()
+    assert "data-cook-start" not in html
+    assert 'id="cook"' not in html
+
+
+def test_cook_steps_are_safe_inside_the_page(client, db):
+    rid = _make_recipe(db, title="Sneaky", instructions_html="<p>Stir &lt;/script&gt;&lt;b&gt;</p>")
+    html = client.get(f"/recipes/{rid}", follow_redirects=True).data.decode()
+    assert "</script><b>" not in html
+    assert _cook_steps(html) == ["Stir </script><b>"]
+
+
+def test_ingredients_can_be_checked_off_but_headings_cannot(client, db):
+    rid = _make_recipe(db, title="Cake")
+    seed_ingredient(db, rid, 0, "For the frosting", kind="heading")
+    seed_ingredient(db, rid, 1, "1 cup butter")
+    seed_ingredient(db, rid, 2, "2 cups sugar")
+    html = client.get(f"/recipes/{rid}", follow_redirects=True).data.decode()
+    assert html.count('class="ing-check no-print"') == 2
+    assert f'data-recipe-id="{rid}"' in html
