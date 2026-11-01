@@ -1,4 +1,4 @@
-from app.routes.api import instruction_steps
+from app.steps import instruction_steps
 from tests.conftest import seed_ingredient, seed_personal, seed_recipe, sync_fts
 
 

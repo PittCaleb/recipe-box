@@ -39,6 +39,9 @@
 
   <div class="recipe-actions no-print">
     <div class="action-group">
+      {% if steps %}
+      <button type="button" class="icon-btn" data-cook-start aria-label="Cook mode">{{ icon('pot') }}</button>
+      {% endif %}
       <form method="post" action="{{ url_for('recipe.favorite', recipe_id=recipe['id']) }}" class="inline-form">
         <button type="submit" class="icon-btn favorite-toggle {% if recipe['favorite'] %}is-active{% endif %}"
                 aria-pressed="{{ 'true' if recipe['favorite'] else 'false' }}"
@@ -78,12 +81,14 @@
   <div class="recipe-body">
     <section class="recipe-ingredients">
       <h2>Ingredients</h2>
-      <ul class="ingredient-list" id="ingredient-list">
+      <ul class="ingredient-list" id="ingredient-list" data-recipe-id="{{ recipe['id'] }}">
         {% for ing in ingredients %}
           {% if ing['kind'] == 'heading' %}
             <li class="ingredient-heading" data-ing-index="{{ loop.index0 }}">{{ ing['raw_text'] }}</li>
           {% else %}
             <li class="ingredient-item" data-ing-index="{{ loop.index0 }}">
+              <button type="button" class="ing-check no-print" aria-pressed="false"
+                      aria-label="Check off">{{ icon('check', 16) }}</button>
               <span class="ingredient-item-main">
                 <span class="ingredient-item-text">{{ ing['raw_text'] }}</span>{% if ing['no_scale'] and ing['is_split'] %} <span class="hint">(not scaled)</span>{% endif %}
               </span>
@@ -94,6 +99,9 @@
           {% endif %}
         {% endfor %}
       </ul>
+      <p class="ing-check-clear no-print" id="ing-check-clear" hidden>
+        <button type="button" class="link-button">Uncheck all</button>
+      </p>
 
       {% if shoppable|select|list %}
       <div class="shop-all no-print">
@@ -123,7 +131,12 @@
     </section>
 
     <section class="recipe-instructions">
-      <h2>Instructions</h2>
+      <div class="section-head">
+        <h2>Instructions</h2>
+        {% if steps %}
+        <button type="button" class="btn btn-primary btn-sm no-print" data-cook-start>{{ icon('pot', 18) }}<span>Cook mode</span></button>
+        {% endif %}
+      </div>
       <div class="rich-text">{{ recipe['instructions_html']|safe }}</div>
     </section>
   </div>
@@ -222,7 +235,47 @@
     </form>
   </div>
 </div>
+
+{% if steps %}
+<script type="application/json" id="cook-steps">{{ steps|tojson }}</script>
+<div class="cook" id="cook" role="dialog" aria-modal="true" aria-label="Cook mode" hidden>
+  <div class="cook-bar">
+    <button type="button" class="icon-btn" id="cook-close" aria-label="Close cook mode">{{ icon('x') }}</button>
+    <span class="cook-count" id="cook-count"></span>
+    <button type="button" class="icon-btn" id="cook-speak" aria-pressed="false" aria-label="Read steps aloud">
+      <span class="when-on">{{ icon('volume') }}</span><span class="when-off">{{ icon('volume-off') }}</span>
+    </button>
+    <button type="button" class="icon-btn" id="cook-mic" aria-pressed="false" aria-label="Listen for voice commands" hidden>
+      <span class="when-on">{{ icon('mic') }}</span><span class="when-off">{{ icon('mic-off') }}</span>
+    </button>
+  </div>
+  <div class="cook-progress"><div class="cook-progress-fill" id="cook-progress"></div></div>
+  <p class="cook-heard" id="cook-heard" aria-live="polite" hidden></p>
+
+  <div class="cook-main">
+    <p class="cook-step" id="cook-step" aria-live="polite"></p>
+    <div class="cook-done" id="cook-done" hidden>
+      <p class="cook-step">All done. Enjoy!</p>
+      <form method="post" action="{{ url_for('recipe.made', recipe_id=recipe['id']) }}">
+        <button type="submit" class="btn btn-primary">{{ icon('check-calendar', 18) }}<span>I made this today</span></button>
+      </form>
+    </div>
+  </div>
+
+  <div class="cook-ingredients" id="cook-ingredients" hidden>
+    <h2>Ingredients</h2>
+    <ul class="ingredient-list" id="cook-ingredient-list"></ul>
+  </div>
+
+  <div class="cook-nav">
+    <button type="button" class="btn cook-nav-btn" id="cook-prev">{{ icon('chevron-left') }}<span>Back</span></button>
+    <button type="button" class="btn cook-nav-btn" id="cook-ing-btn" aria-expanded="false">Ingredients</button>
+    <button type="button" class="btn btn-primary cook-nav-btn" id="cook-next"><span>Next</span>{{ icon('chevron-right') }}</button>
+  </div>
+</div>
+{% endif %}
 {% endblock %}
 {% block head %}
 <script src="{{ url_for('static', filename='js/recipe.js') }}" defer></script>
+<script src="{{ url_for('static', filename='js/cook.js') }}" defer></script>
 {% endblock %}

@@ -58,6 +58,10 @@ addresses.
   any photo replaces one. "Replace with a new AI drawing" (`edit.draw_image`) is owner/admin only, since it deletes the current
   picture, and links only if the picture hasn't changed meanwhile. Tests never call Claude: `conftest.py` runs the job inline
   with a fixed SVG and clears the API key.
+- **Cook mode** (`static/js/cook.js`, since 2026-11-01): the recipe page gets its steps from `app/steps.py` (the same
+  split the API uses) and shows them one at a time, read aloud with the browser's speech, with the screen kept on and,
+  when the mic is on, voice commands ("next", "back", "repeat", "ingredients"). Mic and screen-on need https, so they're
+  missing on the plain-http home address. Ingredient check marks live in `localStorage["recipes.checked.<id>"]` for 12 hours.
 - **Search:** SQLite FTS5 (`recipes_fts`), kept in sync by `_sync_fts` on every save. Ranked with `bm25`. The project
   stays on SQLite (decided 2026-10-27): no Postgres/MySQL.
 - **Templates:** icons are macros in `_icons.html` (`icon('name', size)`). Destructive forms use `data-confirm`. Macros that need

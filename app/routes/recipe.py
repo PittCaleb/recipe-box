@@ -5,6 +5,7 @@ from app.ingredients.scaling import DEFAULT_MULTIPLIER, MULTIPLIER_LABELS, MULTI
 from app.models.recipes import add_note, delete_note, get_recipe, mark_made_today, set_rating, toggle_favorite
 from app.shopping import SHORTCUT_NAME, shopping_entry, shopping_list
 from app.slugs import current_slug, find_slug
+from app.steps import instruction_steps
 from app.users import can_delete_note, current_user, require
 
 # The recipe page sits at the top (/brownies) so shared links read well;
@@ -74,6 +75,7 @@ def view(slug):
         default_index=MULTIPLIER_STOPS.index(DEFAULT_MULTIPLIER),
         shopping=shopping,
         shoppable=[entry is not None for entry in default_entries],
+        steps=instruction_steps(data["recipe"]["instructions_html"]),
     )
 
 
