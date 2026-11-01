@@ -11,8 +11,6 @@ Code on the owner's machine. `CLAUDE.local.md` (gitignored) has the machine, the
   otherwise. The steps are in `CLAUDE.local.md`.
 - **The NAS copy is the live data.** `data/` on the Mac is only a copy; refresh it with
   `scripts/pull-live-data.sh` (stop the local app first). Never copy local data over the NAS.
-- This Mac can't compile C extensions (the Xcode license was never accepted, so clang refuses to run), hence the
-  prebuilt-wheels rule in AGENTS.md.
 
 ## Deploying
 

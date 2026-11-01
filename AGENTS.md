@@ -13,7 +13,6 @@ addresses.
 
 - Plain, friendly language in UI text and summaries. Check changes on a phone (iPhone) as well as a desktop browser.
 - **Pin exact versions in `requirements.txt` and pick ones with prebuilt wheels** for cp314 macOS arm64 and Linux amd64.
-  The maintainer's Mac can't compile C extensions.
 - Don't commit `.coverage`.
 
 ## Running and testing
