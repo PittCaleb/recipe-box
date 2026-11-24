@@ -9,6 +9,16 @@ from dotenv import load_dotenv
 load_dotenv(Path(__file__).resolve().parent / ".env")
 
 
+def parse_email_aliases(text):
+    """"new@example.com=old@example.com,…" as {alias: email}, lowercased."""
+    aliases = {}
+    for pair in text.split(","):
+        alias, _, email = pair.partition("=")
+        if alias.strip() and email.strip():
+            aliases[alias.strip().lower()] = email.strip().lower()
+    return aliases
+
+
 class Config:
     DATA_DIR = Path(os.environ.get("RECIPES_DATA_DIR", "./data")).resolve()
     HOST = os.environ.get("RECIPES_HOST", "0.0.0.0")
@@ -24,6 +34,9 @@ class Config:
         for h in os.environ.get("RECIPES_HOME_HOSTS", "localhost,127.0.0.1").split(",")
         if h.strip()
     }
+    # Another email for someone who already has an account, so both sign-ins
+    # are the same person: "new@example.com=old@example.com", comma-separated.
+    EMAIL_ALIASES = parse_email_aliases(os.environ.get("RECIPES_EMAIL_ALIASES", ""))
     COOKBOOK_TITLE = os.environ.get("RECIPES_COOKBOOK_TITLE", "Our Family Recipes")
     ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY") or None
     IMPORT_MODEL = os.environ.get("RECIPES_IMPORT_MODEL", "claude-opus-5-5")

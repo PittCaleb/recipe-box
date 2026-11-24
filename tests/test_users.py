@@ -3,6 +3,7 @@ what each kind of person may do."""
 import sqlite3
 
 from app.db import _migration_files, _run_python_migration, get_connection, run_migrations
+from config import parse_email_aliases
 from tests.conftest import (
     ACCESS_TEAM, PUBLIC_HOST, access_token, seed_ingredient, seed_personal, seed_recipe, sync_fts,
 )
@@ -85,6 +86,24 @@ def test_email_case_does_not_make_a_second_user(signed_in, db):
     signed_in("Pat@Example.com").get("/")
     signed_in("pat@example.com").get("/")
     assert db.execute("SELECT COUNT(*) FROM users WHERE email LIKE 'pat@%'").fetchone()[0] == 1
+
+
+def test_an_email_alias_is_the_same_person(app, signed_in, db):
+    app.config["RECIPES_CONFIG"].EMAIL_ALIASES = {"pat.too@example.org": "pat@example.com"}
+    signed_in("pat@example.com").get("/")
+    rid = _recipe(db)
+    resp = signed_in("Pat.Too@Example.org").get("/")
+    assert b"Welcome pat<" in resp.data
+    signed_in("pat.too@example.org").post(f"/recipes/{rid}/favorite")
+    assert [r["user_id"] for r in db.execute("SELECT user_id FROM user_recipes WHERE favorite = 1")] == [
+        _user_id(db, "pat@example.com")]
+    assert db.execute("SELECT COUNT(*) FROM users WHERE email LIKE 'pat%'").fetchone()[0] == 1
+
+
+def test_email_aliases_setting():
+    assert parse_email_aliases(" New@Example.org = old@example.com ,broken, =x@example.com,") == {
+        "new@example.org": "old@example.com"}
+    assert parse_email_aliases("") == {}
 
 
 def test_promoted_user_gets_admin(signed_in, db):
