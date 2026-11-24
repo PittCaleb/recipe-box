@@ -8,6 +8,9 @@ trusted: anyone on the home network could send it.
 
 Requests to a home address (RECIPES_HOME_HOSTS) have no sign-in and act as
 user 1, the owner. Any other request without a valid token is refused.
+
+Someone with two emails (RECIPES_EMAIL_ALIASES) is one person: signing in
+with the alias gets the other email's account.
 """
 from datetime import datetime
 
@@ -89,6 +92,7 @@ def load_user():
         email = access_email(token, cfg)
         if email is None:
             abort(403, "Your sign-in couldn't be verified. Reload the page to sign in again.")
+        email = cfg.EMAIL_ALIASES.get(email, email)
         g.user = dict(get_or_create_user(db, email))
     elif _request_host() in cfg.HOME_HOSTS:
         g.user = dict(db.execute("SELECT * FROM users WHERE id = ?", (HOME_USER_ID,)).fetchone())

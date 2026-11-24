@@ -53,6 +53,7 @@ All settings are environment variables with sensible defaults; see `config.py`:
 | `RECIPES_HOME_HOSTS` | `localhost,127.0.0.1` | Hostnames with no sign-in; visitors there act as the owner (user 1) |
 | `RECIPES_ACCESS_TEAM_DOMAIN` | unset | Cloudflare Access team domain, e.g. `yourteam.cloudflareaccess.com` |
 | `RECIPES_ACCESS_AUD` | unset | The Access application's Audience (AUD) tag |
+| `RECIPES_EMAIL_ALIASES` | unset | Second emails for people who already have an account, `new@example.com=old@example.com`, comma-separated |
 | `RECIPES_COOKBOOK_TITLE` | `Our Family Recipes` | Default cookbook cover title |
 | `ANTHROPIC_API_KEY` | unset | Required for **Admin → Import a new PDF** and for drawn placeholder pictures (see below) |
 | `RECIPES_IMPORT_MODEL` | `claude-opus-5-5` | Model used to transcribe uploaded PDFs |
@@ -77,7 +78,9 @@ Favorites, ratings, and "I made this" are each person's own.
 Who someone is: through the public address, Cloudflare Access signs them in, and the app reads their email from the
 signed token Access adds to each request (checked against `RECIPES_ACCESS_TEAM_DOMAIN` and `RECIPES_ACCESS_AUD`). The
 first time someone new arrives they get a regular account. On a home address (`RECIPES_HOME_HOSTS`) there is no sign-in
-and everyone acts as user 1, the owner. Any other request without a valid token is refused.
+and everyone acts as user 1, the owner. Any other request without a valid token is refused. Someone who signs in with
+a second email (say, a Google account after using a work address) can keep their account: add
+`second@example.com=first@example.com` to `RECIPES_EMAIL_ALIASES`, and both emails are the same person.
 
 To make someone an admin (there's no screen for it yet):
 ```sh

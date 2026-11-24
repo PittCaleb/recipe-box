@@ -73,7 +73,8 @@ addresses.
 - **Identity:** `app/users.py`. `load_user` runs before every request except static files.
   1. A `Cf-Access-Jwt-Assertion` header must verify against `RECIPES_ACCESS_TEAM_DOMAIN`
      and `RECIPES_ACCESS_AUD`, using RS256 with keys from `/cdn-cgi/access/certs`. Its email becomes a `users` row, created
-     automatically as a non-admin on the first visit.
+     automatically as a non-admin on the first visit. An email listed in `RECIPES_EMAIL_ALIASES` (`alias=email`) gets
+     the other email's account instead, for one person with two addresses.
   2. With no token, a host in `RECIPES_HOME_HOSTS` acts as user 1 (the owner, admin).
   3. Anything else gets a 403.
   4. A bad token gets a 403 even on a home host.
